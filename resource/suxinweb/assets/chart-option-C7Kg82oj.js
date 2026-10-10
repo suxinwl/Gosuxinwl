@@ -1,0 +1,1 @@
+import{Ht as e}from"./arco-C7bjzLI6.js";import{c as t}from"./store-BdvAArMf.js";function n(n){let r=t(),i=e(()=>r.theme===`dark`);return{chartOption:e(()=>n(i.value))}}export{n as t};

@@ -1,0 +1,30 @@
+name: Development checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.14.0
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 1.25.1
+          cache: true
+      - name: Install frontend dependencies
+        working-directory: web
+        run: npm ci
+      - name: Check types, frontend behavior and build
+        working-directory: web
+        run: npm run check
+      - name: Check core services and runtime plugin framework
+        run: go test ./internal/builtinai ./internal/devtools/ai ./internal/devtools/access ./internal/logic/admin_system ./internal/runtimeplugin ./utility/auth
+      - name: Build the core host
+        run: go build -mod=readonly -trimpath -o bin/gosuxin .
