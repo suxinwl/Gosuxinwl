@@ -8,8 +8,8 @@ import (
 	"github.com/360EntSecGroup-Skylar/excelize"
 	"github.com/suxinwl/GoSuxin/framework/database/gdb"
 	"github.com/suxinwl/GoSuxin/framework/frame/g"
-	"github.com/suxinwl/GoSuxin/framework/os/gcfg"
 	"github.com/suxinwl/GoSuxin/framework/util/gconv"
+	"github.com/suxinwl/GoSuxin/utility/dbcompat"
 
 	"log"
 	"net/url"
@@ -23,7 +23,6 @@ func ExportToExcel(ctx context.Context, rows *gdb.Result, columns []interface{},
 	// 创建 Excel 文件
 	file := excelize.NewFile()
 	sheet := "Sheet1"
-	dbName, _ := gcfg.Instance().Get(ctx, "database.default.name")
 	// 获取列名和列注释
 	var fields []string
 	var columnComments []string
@@ -42,16 +41,15 @@ func ExportToExcel(ctx context.Context, rows *gdb.Result, columns []interface{},
 			}
 		} else {
 			// 查询数据库获取字段注释
-			query := "SELECT COLUMN_NAME, COLUMN_COMMENT FROM information_schema.columns WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? order by ordinal_position"
-			fieldData, err := g.DB().Query(ctx, query, dbName, tableName)
+			fieldData, err := dbcompat.Columns(ctx, g.DB(), tableName)
 			if err != nil {
 				return nil, fmt.Errorf("查询注释失败: %v", err)
 			}
 
 			// 按照查询结果的顺序存储列名和列注释
 			for _, data := range fieldData {
-				colName := data["COLUMN_NAME"].String()
-				colComment := data["COLUMN_COMMENT"].String()
+				colName := data.Name
+				colComment := data.Comment
 				if colComment == "" {
 					colComment = colName
 				}

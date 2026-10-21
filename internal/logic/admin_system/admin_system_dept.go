@@ -54,7 +54,7 @@ func (s *sAdminsystem) DeptParent(ctx context.Context, req *system.DeptParentReq
 // 保存、编辑部门
 func (s *sAdminsystem) DeptSave(ctx context.Context, req *system.DeptSaveReq) (res *gf.R) {
 	if req.Id == gf.ZeroValue {
-		addId, err := dao.AuthDept.Ctx(ctx).Data(req).InsertAndGetId()
+		addId, err := dao.AuthDept.Ctx(ctx).Data(req).FieldsEx("id").InsertAndGetId()
 		if err != nil {
 			res = gf.Failed().SetMsg("添加部门失败").SetData(err)
 		} else {

@@ -59,7 +59,7 @@ func (s *sAdminsystem) RuleRoutes(ctx context.Context, req *system.RuleRoutesReq
 func (s *sAdminsystem) RuleSave(ctx context.Context, req *system.RuleSaveReq) (res *gf.R) {
 	if req.Id == gf.ZeroValue {
 		req.Uid = ctx.Value("uid")
-		addId, err := dao.AuthRule.Ctx(ctx).Data(req).InsertAndGetId()
+		addId, err := dao.AuthRule.Ctx(ctx).Data(req).FieldsEx("id").InsertAndGetId()
 		if err != nil {
 			res = gf.Failed().SetMsg("添加菜单失败").SetData(err)
 		} else {

@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/subtle"
 	_ "github.com/suxinwl/GoSuxin/framework/contrib/drivers/mysql"
+	_ "github.com/suxinwl/GoSuxin/framework/contrib/drivers/sqlite"
 	_ "github.com/suxinwl/GoSuxin/framework/contrib/nosql/redis"
 	"github.com/suxinwl/GoSuxin/framework/frame/g"
 	"github.com/suxinwl/GoSuxin/framework/net/ghttp"

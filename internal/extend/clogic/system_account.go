@@ -14,5 +14,7 @@ func AppRoleAccess(ctx context.Context, roleids []interface{}, uid interface{}) 
 		marr := map[string]interface{}{"uid": uid, "role_id": val}
 		save_arr = append(save_arr, marr)
 	}
-	dao.AuthRoleAccess.Ctx(ctx).Data(save_arr).Save()
+	if len(save_arr) > 0 {
+		dao.AuthRoleAccess.Ctx(ctx).Data(save_arr).Insert()
+	}
 }

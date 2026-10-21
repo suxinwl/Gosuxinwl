@@ -100,6 +100,19 @@ func DBDump(opts ...DumpOption) error {
 		o.writer = os.Stdout
 	}
 
+	kind, _ := gcfg.Instance().Get(ctx, "database.default.type")
+	if kind.String() == "sqlite" {
+		db, err := sql.Open("sqlite", dsn)
+		if err != nil {
+			return err
+		}
+		defer db.Close()
+		tables := o.tables
+		if o.isAllTable {
+			tables = nil
+		}
+		return dumpSQLite(db, o.writer, tables, dbprefix.String(), o.isData, o.isDropTable)
+	}
 	buf := bufio.NewWriter(o.writer)
 	defer buf.Flush()
 
@@ -416,6 +429,7 @@ func ImportSql(SqlPath string) error {
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 	content, err := os.ReadFile(SqlPath)
 	if err != nil {
 		return err
@@ -433,6 +447,8 @@ func GetDB_dsn() string {
 	mapConf := dbCof.Map()
 	if mapConf["type"] == "mysql" || mapConf["type"] == "mariadb" || mapConf["type"] == "tidb" {
 		return fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?charset=utf8&parseTime=True&loc=Local&timeout=1000ms&sql_mode=%s&multiStatements=true", mapConf["user"], mapConf["pass"], mapConf["host"], mapConf["port"], mapConf["name"], mapConf["sqlmode"])
+	} else if mapConf["type"] == "sqlite" {
+		return fmt.Sprint(mapConf["name"]) + "?_pragma=busy_timeout(5000)&_pragma=foreign_keys(ON)"
 	} else if mapConf["type"] == "pgsql" {
 		return fmt.Sprintf("user=%v password=%v host=%v port=%v dbname=%v sslmode=disable timezone=Asia/Shanghai", mapConf["user"], mapConf["pass"], mapConf["host"], mapConf["port"], mapConf["name"])
 	} else if mapConf["type"] == "mssql" {

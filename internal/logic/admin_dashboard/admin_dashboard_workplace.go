@@ -47,7 +47,7 @@ func (s *sAdminDashboard) GetQuick(ctx context.Context, req *dashboard.GetQuickR
 // 保存快捷操作数据
 func (s *sAdminDashboard) SaveQuick(ctx context.Context, req *dashboard.SaveQuickReq) (res *gf.R) {
 	if req.Id == gf.ZeroValue {
-		addId, err := dao.HomeQuickop.Ctx(ctx).Data(req).InsertAndGetId()
+		addId, err := dao.HomeQuickop.Ctx(ctx).Data(req).FieldsEx("id").InsertAndGetId()
 		if err != nil {
 			res = gf.Failed().SetMsg("添加失败").SetData(err)
 		} else {

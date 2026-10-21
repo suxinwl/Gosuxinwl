@@ -42,7 +42,7 @@ func (s *sAdmindatacenter) DictionaryList(ctx context.Context, req *datacenter.D
 // 保存、编辑字典数据
 func (s *sAdmindatacenter) DictionarySave(ctx context.Context, req *datacenter.DictionarySaveReq) (res *gf.R) {
 	if req.Id == gf.ZeroValue {
-		addId, err := g.Model(req.Tablename).Data(req).InsertAndGetId()
+		addId, err := g.Model(req.Tablename).Data(req).FieldsEx("id").InsertAndGetId()
 		if err != nil {
 			res = gf.Failed().SetMsg("添加字典数据失败").SetData(err)
 		} else {

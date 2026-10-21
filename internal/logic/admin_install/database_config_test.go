@@ -52,3 +52,47 @@ func TestDatabaseConfigInvalidInputDoesNotOverwriteFile(t *testing.T) {
 		}
 	}
 }
+
+func TestSQLiteConfigAndCLI(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	if err := os.WriteFile(path, []byte("database:\n  default:\n    type: mysql\n    link: mysql:old-connection\n    pass: old-password\n    createdAt: createtime\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	v, err := normalizeDatabase(map[string]string{"type": "sqlite", "path": filepath.Join(dir, "数据.db")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = writeDatabaseConfig(path, v); err != nil {
+		t.Fatal(err)
+	}
+	content, _ := os.ReadFile(path)
+	config, err := gyaml.Decode(content)
+	if err != nil {
+		t.Fatal(err)
+	}
+	db := config["database"].(map[string]any)["default"].(map[string]any)
+	if db["type"] != "sqlite" || db["name"] != v["name"] || db["pass"] != "" || db["link"] != nil || db["createdAt"] != "createtime" {
+		t.Fatalf("incorrect database configuration: %v", db)
+	}
+	cli := filepath.Join(dir, "cli.yaml")
+	if err = os.WriteFile(cli, []byte("suxincli:\n  gen:\n    dao: []\n  build:\n    name: keep-me\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err = writeCLIConfig(cli, v); err != nil {
+		t.Fatal(err)
+	}
+	content, _ = os.ReadFile(cli)
+	config, err = gyaml.Decode(content)
+	if err != nil {
+		t.Fatal(err)
+	}
+	section := config["suxincli"].(map[string]any)
+	if section["build"].(map[string]any)["name"] != "keep-me" {
+		t.Fatal("CLI build settings changed")
+	}
+	dao := section["gen"].(map[string]any)["dao"].([]any)[0].(map[string]any)
+	if dao["link"] != "sqlite::@file("+v["name"]+")" {
+		t.Fatal("CLI does not use selected database")
+	}
+}

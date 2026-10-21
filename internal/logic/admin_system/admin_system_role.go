@@ -176,7 +176,7 @@ func (s *sAdminsystem) RoleSave(ctx context.Context, req *system.RoleSaveReq) (r
 	}
 	if req.Id == gf.ZeroValue {
 		req.AccountId = gf.Int64(ctx.Value("uid"))
-		addId, err := dao.AuthRole.Ctx(ctx).Data(req).InsertAndGetId()
+		addId, err := dao.AuthRole.Ctx(ctx).Data(req).FieldsEx("id").InsertAndGetId()
 		if err != nil {
 			res = gf.Failed().SetMsg("添加角色失败").SetData(err)
 		} else {

@@ -26,7 +26,7 @@ func (s *sAdmindatacenter) TabledataSave(ctx context.Context, req *datacenter.Ta
 		if req.BbWay == "sys" {
 			req.Tablename = "dictionary_data"
 		}
-		addId, err := dao.DictionaryGroup.Ctx(ctx).Data(req).InsertAndGetId()
+		addId, err := dao.DictionaryGroup.Ctx(ctx).Data(req).FieldsEx("id").InsertAndGetId()
 		if err != nil {
 			res = gf.Failed().SetMsg("添加字典分组失败").SetData(err)
 		} else {

@@ -14,6 +14,7 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/suxinwl/GoSuxin/framework v1.0.0
 	github.com/suxinwl/GoSuxin/framework/contrib/drivers/mysql v1.0.0
+	github.com/suxinwl/GoSuxin/framework/contrib/drivers/sqlite v1.0.0
 	github.com/suxinwl/GoSuxin/framework/contrib/nosql/redis v1.0.0
 	github.com/tencentyun/cos-go-sdk-v5 v0.7.70
 	github.com/xuri/excelize/v2 v2.9.1

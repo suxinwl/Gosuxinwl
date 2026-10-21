@@ -101,7 +101,7 @@ func (s *sAdminsystem) AccountSave(ctx context.Context, req *system.AccountSaveR
 	}
 	if req.Id == gf.ZeroValue {
 		req.AccountId = ctx.Value("uid") //当前用户ID
-		addId, err := dao.Admin.Ctx(ctx).Data(req).InsertAndGetId()
+		addId, err := dao.Admin.Ctx(ctx).Data(req).FieldsEx("id").InsertAndGetId()
 		if err != nil {
 			res = gf.Failed().SetMsg("添加失败").SetData(err)
 		} else {

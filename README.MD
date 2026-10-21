@@ -18,7 +18,7 @@ GoSuxin 是由 Suxin 技术团队维护的 Go 开发框架与管理后台，包�
 | 环境 | 版本或用途 |
 | --- | --- |
 | Go | 1.25.1 或兼容工具链 |
-| MySQL | 8，保存系统及业务数据 |
+| 数据库 | 安装时选择 MySQL 8.x、MySQL 5.7 或 SQLite；SQLite 无需另装数据库服务 |
 | Node.js | 24.14.x |
 | npm | 11.9.x，使用已提交的锁文件安装依赖 |
 | Python | 3，初始化本地配置及同步前端资源 |
@@ -36,13 +36,19 @@ python scripts/init-local-config.py
 
 脚本创建缺失的配置文件并生成鉴权密钥，已有文件保持原值。填写 `manifest/config/config.yaml` 的数据库连接；应用设置和上传设置分别位于 `manifest/config/app.yaml`、`manifest/config/upload.yaml`。
 
-配置模板的默认数据库名为 `gosuxin_v1_0`，表前缀为 `gf_`，HTTP 端口为 `8603`。本机当前实例使用数据库 `GoxinV1`；其他环境以自己的实际配置为准。数据库密码和令牌不写入文档。
+配置模板默认选择 MySQL 8，数据库名为 `gosuxin_v1_0`，固定表前缀为 `gf_`，HTTP 端口为 `8603`。安装页面可改选 MySQL 5.7 或 SQLite。MySQL 会核对服务器版本；SQLite 默认文件为 `storage/database/gosuxin.db`，安装器保存其绝对路径，并配置 WAL、5 秒锁等待和单连接池。数据库密码和令牌不写入文档。
 
 ```shell
 go run .
 ```
 
 首次安装在模板默认的 `debug` 模式下访问 `http://127.0.0.1:8603/install/`，按页面流程设置数据库和管理员账号，完成后重新启动服务。安装器适用于新数据库；已有部署保留配置、数据库及安装锁。
+
+三种选项使用同一套程序，每个部署选择一种数据库。安装器会拒绝已有业务表的数据库，避免覆盖数据。已安装系统不能通过修改类型直接迁移数据。SQLite 适合单机部署，文件需放在本地持久磁盘；多个插件进程可以共享该数据库，但写入仍需串行，持续高并发写入应使用 MySQL。SQLite 不提供 MySQL 的字段注释，自动导出表头回退为字段名，业务页面可显式提供中文列标题。SQLite `NOCASE` 与 MySQL Unicode 排序规则不完全相同，业务唯一键应使用规范化编码。
+
+数据库初始化 SQL 分别为 `devsource/developer/install/goframepro.sql`（MySQL 8/5.7）与 `sqlite.sql`（SQLite）。升级 SQL 按数据库选择 `manifest/sql/v1.0.0.sql` 或 `v1.0.0.sqlite.sql`。修改 MySQL 种子后执行 `python scripts/sync-sqlite-schema.py`，审查并提交两套 SQL；该脚本只处理本仓库种子，不是通用数据库迁移器。SQL 导出文件也只供相同数据库类型使用。
+
+运行插件宿主和共享 SDK 都已加载两种驱动；第三方插件自己的建表 SQL、查询和升级逻辑仍需支持所选数据库，已有插件应重新构建并验证。
 
 后台地址为 `http://127.0.0.1:8603/suxinweb/`。管理员账号由安装流程设置，没有通用默认密码。
 
@@ -86,8 +92,10 @@ python scripts/repack_webcode.py
 主程序和共享插件框架的检查命令与 CI 一致：
 
 ```shell
-go test ./internal/builtinai ./internal/devtools/ai ./internal/devtools/access ./internal/logic/admin_system ./internal/runtimeplugin ./utility/auth
+go test ./internal/builtinai ./internal/devtools/ai ./internal/devtools/access ./internal/logic/admin_system ./internal/runtimeplugin ./utility/auth ./internal/logic/admin_install ./utility/tools/dbtool ./utility/dbcompat ./utility/extend/excelexport
 ```
+
+构建 `bin/gosuxin`（Windows 为 `.exe`）后，可运行 `node scripts/test-database-install.cjs`，在 `runtime/db-compat/` 的独立目录验证 SQLite 安装、重启、登录、部门操作、角色授权与插件进程共享数据库。测试结束会关闭测试进程并保留诊断文件。CI 另以 MySQL 5.7、8.0 服务运行相同流程。手动验证 MySQL 时设置 `SUXIN_SMOKE_DATABASE=mysql57` 或 `mysql8`，以及 `SUXIN_TEST_MYSQL_HOST/PORT/USER/PASSWORD`，请使用专门的测试实例；脚本会创建独立的 `suxin_smoke_*` 数据库。
 
 ## AI 与插件
 

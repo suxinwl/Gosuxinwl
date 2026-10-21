@@ -8,7 +8,6 @@ import (
 	"github.com/suxinwl/GoSuxin/framework/container/gvar"
 	"github.com/suxinwl/GoSuxin/framework/crypto/gmd5"
 	"github.com/suxinwl/GoSuxin/framework/frame/g"
-	"github.com/suxinwl/GoSuxin/framework/os/gcfg"
 	"github.com/suxinwl/GoSuxin/framework/text/gstr"
 )
 
@@ -185,17 +184,12 @@ func StringToJSON(val interface{}) interface{} {
 // 判断某个数据表是否存在指定字段
 // tablename=表名 field=字段
 func DbHaseField(tablename, fields string) bool {
-	dbname, _ := gcfg.Instance().Get(ctx, "database.default.name")
-	//获取数据库名
-	dielddata, _ := g.DB().Query(ctx, "select COLUMN_NAME from information_schema.columns where TABLE_SCHEMA='"+String(dbname)+"' AND TABLE_NAME='"+tablename+"'")
-	var tablefields []interface{}
-	for _, val := range dielddata {
-		var valjson map[string]interface{}
-		mdata, _ := json.Marshal(val)
-		json.Unmarshal(mdata, &valjson)
-		tablefields = append(tablefields, valjson["COLUMN_NAME"].(string))
+	columns, err := g.DB().TableFields(ctx, tablename)
+	if err != nil {
+		return false
 	}
-	return IsContain(tablefields, fields)
+	_, exists := columns[fields]
+	return exists
 }
 
 // 判断元素是否存在数组中

@@ -206,28 +206,40 @@
 						<div class="htitle">配置数据库：</div>
 					</div>
 					<div class="form-field">
-						<label>MySQL数据库地址：</label>
+                        <label>数据库类型：</label>
+                        <select v-model="formDB.type" style="padding:10px;width:100%;max-width:400px">
+                            <option value="mysql8">MySQL 8</option>
+                            <option value="mysql57">MySQL 5.7</option>
+                            <option value="sqlite">SQLite</option>
+                        </select>
+                    </div>
+                    <div class="form-field" v-if="formDB.type === 'sqlite'">
+                        <label>SQLite 文件路径：</label>
+                        <input type="text" v-model="formDB.path" placeholder="storage/database/gosuxin.db">
+                    </div>
+                    <div class="form-field" v-if="formDB.type !== 'sqlite'">
+                        <label>MySQL数据库地址：</label>
 						<input type="text" v-model="formDB.host" placeholder="连接数据库的访问地址(ip)，如：127.0.0.1">
 					</div>
-					<div class="form-field">
+					<div class="form-field" v-if="formDB.type !== 'sqlite'">
 						<label>MySQL 端  口  号：</label>
 						<input type="text"  v-model="formDB.port" placeholder="连接数据库的端口号，如：3306">
 					</div>
-					<div class="form-field">
+					<div class="form-field" v-if="formDB.type !== 'sqlite'">
 						<label>MySQL 用户名：</label>
 						<input type="text"  v-model="formDB.user" placeholder="连接数据库的用户名，如：root">
 					</div>
-					<div class="form-field">
+					<div class="form-field" v-if="formDB.type !== 'sqlite'">
 						<label>MySQL 密 码：</label>
 						<input type="text" v-model="formDB.pass" placeholder="连接数据库的密码，如：root">
 					</div>
-					<div class="form-field">
+					<div class="form-field" v-if="formDB.type !== 'sqlite'">
 						<label>MySQL数据库名称：</label>
 						<input type="text" v-model="formDB.name" placeholder="数据库名称，如：gosuxin，编码要求utf8mb4">
 					</div>
 					<div class="form-field">
-						<label>MySQL数据表名前缀：</label>
-						<input type="text" name="prefix" v-model="formDB.prefix" placeholder="添加数据表前缀，如：gf_">
+						<label>数据表名前缀：</label>
+						<input type="text" name="prefix" v-model="formDB.prefix" readonly>
 					</div>
 					<div class="form-field">
 						<label>超级管理员账号：</label>
@@ -265,12 +277,14 @@
         el: '#app',
         data: {
             formDB: {
+				type:"mysql8",
+				path:"storage/database/gosuxin.db",
 				host:"127.0.0.1",
 				port:"3306",
 				user:"",
 				pass:"",
 				name:"",
-				prefix:"",
+				prefix:"gf_",
 			},
             formApp:{
 				username:"admin",
@@ -289,7 +303,7 @@
 				var that = this;
 				axios.get('/admin/install/getConfig').then(function(response){
 				  if(response.data.code==0){
-					that.formDB = response.data.data.database
+					that.formDB = Object.assign({},that.formDB,response.data.data.database)
 					that.isLock = response.data.data.isLock
 					that.formApp = Object.assign({},that.formApp, response.data.data.app)
 				  }else{
@@ -302,13 +316,6 @@
 			},
             handleSave: function () {
 				var that = this;
-				if(this.formDB.user.indexOf("-") >= 0){
-					this.showError("数据库用户名不能有-字符")
-					return
-				}else if(this.formDB.name.indexOf("-") >= 0){
-					this.showError("数据库名不能有-字符")
-					return
-				}
 				that.saveLoading=true
 				axios.post('/admin/install/save',{formDB:this.formDB,formApp:this.formApp}).then(function(response){
 					var res= response.data

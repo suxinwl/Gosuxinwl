@@ -14,6 +14,7 @@ database:
     pass: ''
     name: gosuxin_v1_0
     type: mysql
+    version: '8.0' # Installer selection: '8.0' (MySQL 8.x) or '5.7'.
     prefix: gf_
     debug: false
     createdAt: createtime
