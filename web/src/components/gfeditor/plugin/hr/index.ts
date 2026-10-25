@@ -8,7 +8,7 @@ import {
 	CARD_VALUE_KEY,
 	decodeCardValue,
 } from '@/components/gfeditor/emain';
-import type MarkdownIt from 'markdown-it';
+import type { MarkdownIt } from 'markdown-it';
 import HrComponent, { HrValue } from './component';
 import { HrOptions } from './types';
 

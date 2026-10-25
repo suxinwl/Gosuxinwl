@@ -1,24 +1,31 @@
 <template>
   <VCharts
     v-if="renderChart"
-    :option="options"
+    :option="option ?? options"
+    theme="v5"
     :autoresize="autoResize"
     :style="{ width, height }"
   />
 </template>
 
 <script lang="ts" setup>
-  import { ref, nextTick } from 'vue';
+  import { ref, nextTick, type PropType } from 'vue';
+  import type { EChartsOption } from 'echarts';
   import VCharts from 'vue-echarts';
   import { use } from 'echarts/core'
   import { PieChart, LineChart, BarChart } from 'echarts/charts'
-  import { LegendComponent, TitleComponent, TooltipComponent ,GridComponent } from 'echarts/components'
+  import { GraphicComponent, LegendComponent, TitleComponent, TooltipComponent ,GridComponent } from 'echarts/components'
   import { CanvasRenderer } from 'echarts/renderers'
+  import 'echarts/theme/v5.js';
 
-  use([TitleComponent, TooltipComponent, LegendComponent, PieChart, LineChart, BarChart, CanvasRenderer,GridComponent ])
+  use([GraphicComponent, TitleComponent, TooltipComponent, LegendComponent, PieChart, LineChart, BarChart, CanvasRenderer,GridComponent ])
   defineProps({
+    option: {
+      type: Object as PropType<EChartsOption>,
+      default: undefined,
+    },
     options: {
-      type: Object,
+      type: Object as PropType<EChartsOption>,
       default() {
         return {};
       },

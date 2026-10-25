@@ -3,12 +3,8 @@ import { useI18n } from 'vue-i18n';
 import { Message } from '@arco-design/web-vue';
 
 export default function useLocale() {
-  const i18 = useI18n();
-  const currentLocale = computed(() => {
-    const localestr=i18.locale.value
-    localStorage.setItem('arco-locale', localestr);
-    return localestr;
-  });
+  const i18 = useI18n({ useScope: 'global' });
+  const currentLocale = computed(() => i18.locale.value);
   const changeLocale = (value: string) => {
     if (i18.locale.value === value) {
       return;

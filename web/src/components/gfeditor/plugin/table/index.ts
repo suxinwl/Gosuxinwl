@@ -14,7 +14,7 @@ import {
 	transformCustomTags,
 	DATA_ID,
 } from '@/components/gfeditor/emain';
-import type MarkdownIt from 'markdown-it';
+import type { MarkdownIt } from 'markdown-it';
 import TableComponent, { Template, Helper } from './component';
 import locales from './locale';
 import { TableInterface, TableOptions, TableValue } from './types';

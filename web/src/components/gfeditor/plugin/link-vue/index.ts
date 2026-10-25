@@ -5,7 +5,7 @@ import {
 	isEngine,
 	PluginOptions,
 } from '@/components/gfeditor/emain';
-import type MarkdownIt from 'markdown-it';
+import type { MarkdownIt } from 'markdown-it';
 import Toolbar from './toolbar';
 import locales from './locales';
 

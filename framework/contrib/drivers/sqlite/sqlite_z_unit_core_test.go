@@ -10,6 +10,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"runtime"
 	"testing"
 	"time"
 
@@ -40,6 +41,9 @@ func Test_New(t *testing.T) {
 }
 
 func Test_New_Path_With_Colon(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Windows does not allow colons in directory names")
+	}
 	gtest.C(t, func(t *gtest.T) {
 
 		dbFilePathWithColon := gfile.Join(dbDir, "test:1")

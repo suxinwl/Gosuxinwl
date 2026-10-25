@@ -1,20 +1,17 @@
 package excelexport
 
 import (
-	"bytes"
 	"context"
 	"fmt"
+	"net/url"
+	"strconv"
+	"time"
 
-	"github.com/360EntSecGroup-Skylar/excelize"
 	"github.com/suxinwl/GoSuxin/framework/database/gdb"
 	"github.com/suxinwl/GoSuxin/framework/frame/g"
 	"github.com/suxinwl/GoSuxin/framework/util/gconv"
 	"github.com/suxinwl/GoSuxin/utility/dbcompat"
-
-	"log"
-	"net/url"
-	"strconv"
-	"time"
+	"github.com/xuri/excelize/v2"
 )
 
 // ExportToExcel 导出数据库记录为 Excel 文件流
@@ -22,6 +19,7 @@ import (
 func ExportToExcel(ctx context.Context, rows *gdb.Result, columns []interface{}, tableName, fileName string) ([]byte, error) {
 	// 创建 Excel 文件
 	file := excelize.NewFile()
+	defer file.Close()
 	sheet := "Sheet1"
 	// 获取列名和列注释
 	var fields []string
@@ -30,7 +28,10 @@ func ExportToExcel(ctx context.Context, rows *gdb.Result, columns []interface{},
 		if len(columns) > 0 {
 			// 按照查询结果的顺序存储列名和列注释
 			for _, column := range columns {
-				columndata := column.(map[string]interface{})
+				columndata, ok := column.(map[string]interface{})
+				if !ok {
+					return nil, fmt.Errorf("无效的导出字段: %T", column)
+				}
 				colName := gconv.String(columndata["field"])
 				colComment := gconv.String(columndata["title"])
 				if colComment == "" {
@@ -63,8 +64,16 @@ func ExportToExcel(ctx context.Context, rows *gdb.Result, columns []interface{},
 	}
 
 	// 写入表头（使用列注释作为表头）
+	columnNames := make([]string, len(columnComments))
 	for i, col := range columnComments {
-		file.SetCellValue(sheet, excelize.ToAlphaString(i)+"1", col)
+		name, err := excelize.ColumnNumberToName(i + 1)
+		if err != nil {
+			return nil, err
+		}
+		columnNames[i] = name
+		if err := file.SetCellValue(sheet, name+"1", col); err != nil {
+			return nil, err
+		}
 	}
 
 	// 写入数据
@@ -72,18 +81,17 @@ func ExportToExcel(ctx context.Context, rows *gdb.Result, columns []interface{},
 	for _, row := range *rows {
 		for i, col := range fields {
 			val := row[col]
-			file.SetCellValue(sheet, excelize.ToAlphaString(i)+strconv.Itoa(rowIndex), val)
+			if err := file.SetCellValue(sheet, columnNames[i]+strconv.Itoa(rowIndex), val.Val()); err != nil {
+				return nil, err
+			}
 		}
 		rowIndex++
 	}
 
 	// 将 Excel 文件写入缓冲区
-	var buf bytes.Buffer
-	err := file.Write(&buf)
-
+	buf, err := file.WriteToBuffer()
 	if err != nil {
-		log.Printf("将 Excel 文件写入缓冲区是出错： %v", err)
-		return nil, err
+		return nil, fmt.Errorf("将 Excel 文件写入缓冲区出错: %w", err)
 	}
 	if g.IsEmpty(fileName) {
 		fileName = url.QueryEscape(fmt.Sprintf("%s.xlsx", time.Now().Format("20060102150405"))) // 中文编码处理
@@ -91,12 +99,16 @@ func ExportToExcel(ctx context.Context, rows *gdb.Result, columns []interface{},
 		fileName = url.QueryEscape(fmt.Sprintf("%s.xlsx", fileName)) // 中文编码处理
 	}
 	req := g.RequestFromCtx(ctx)
-	req.Response.Writer.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-	req.Response.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileName))
-	req.Response.Writer.Header().Set("Content-Transfer-Encoding", "binary")
-	req.Response.Writer.Header().Set("Access-Control-Expose-Headers", "Content-Disposition")
-	req.Response.Writer.Header().Set("Content-Length", strconv.Itoa(len(buf.Bytes()))) // 添加文件大小标识
-	file.Write(req.Response.Writer)
+	if req != nil {
+		req.Response.Writer.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+		req.Response.Writer.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileName))
+		req.Response.Writer.Header().Set("Content-Transfer-Encoding", "binary")
+		req.Response.Writer.Header().Set("Access-Control-Expose-Headers", "Content-Disposition")
+		req.Response.Writer.Header().Set("Content-Length", strconv.Itoa(buf.Len())) // 添加文件大小标识
+		if _, err := req.Response.Writer.Write(buf.Bytes()); err != nil {
+			return nil, err
+		}
+	}
 	// 返回文件流
 	return buf.Bytes(), nil
 }

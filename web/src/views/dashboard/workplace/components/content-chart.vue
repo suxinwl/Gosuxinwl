@@ -60,7 +60,7 @@
         boundaryGap: false,
         axisLabel: {
           color: '#4E5969',
-          formatter(value: number, idx: number) {
+          formatter(value: string, idx: number) {
             if (idx === 0) return '';
             if (idx === xAxis.value.length - 1) return '';
             return `${value}`;
@@ -97,8 +97,8 @@
           show: false,
         },
         axisLabel: {
-          formatter(value: any, idx: number) {
-            if (idx === 0) return value;
+          formatter(value: number, idx: number) {
+            if (idx === 0) return String(value);
             return `${value}k`;
           },
         },

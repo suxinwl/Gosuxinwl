@@ -1,5 +1,5 @@
 import { isEngine, MarkPlugin, PluginOptions } from '@/components/gfeditor/emain';
-import type MarkdownIt from 'markdown-it';
+import type { MarkdownIt } from 'markdown-it';
 
 export interface ItalicOptions extends PluginOptions {
 	hotkey?: string | Array<string>;

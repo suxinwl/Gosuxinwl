@@ -17,10 +17,10 @@ GoSuxin 是由 Suxin 技术团队维护的 Go 开发框架与管理后台，包�
 
 | 环境 | 版本或用途 |
 | --- | --- |
-| Go | 1.25.1 或兼容工具链 |
+| Go | 1.27.3，开发、CI 与发布使用同一补丁版本 |
 | 数据库 | 安装时选择 MySQL 8.x、MySQL 5.7 或 SQLite；SQLite 无需另装数据库服务 |
-| Node.js | 24.14.x |
-| npm | 11.9.x，使用已提交的锁文件安装依赖 |
+| Node.js | 24.22.1，版本记录在 `web/.nvmrc` |
+| npm | 11.21.1，使用已提交的锁文件安装依赖 |
 | Python | 3，初始化本地配置及同步前端资源 |
 | Redis | 按实际使用的缓存功能配置，连接模板位于后端配置中 |
 
@@ -80,6 +80,7 @@ go build -mod=readonly -trimpath -o bin/gosuxin .
 
 ```shell
 cd web
+npm install --global npm@11.21.1
 npm ci
 npm run check
 cd ..
@@ -88,6 +89,8 @@ python scripts/repack_webcode.py
 ```
 
 `npm run check` 执行类型检查、布局与前端行为测试及生产构建。构建输出为 `web/dist/`，同步后部署在 `resource/suxinweb/`；源码安装器的前端包为 `devsource/developer/install/webcode.zip`。前端开发服务、接口地址和部署方式见 [前端说明](web/README.md)。
+
+依赖分批升级的变更、验证范围及后续主版本迁移顺序见 [依赖升级记录](docs/dependency-upgrade.md)。
 
 主程序和共享插件框架的检查命令与 CI 一致：
 

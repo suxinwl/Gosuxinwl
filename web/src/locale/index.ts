@@ -11,9 +11,10 @@ export const LOCALE_OPTIONS = [
 const defaultLocale = localStorage.getItem('arco-locale') || 'zh-CN';
 
 const i18n = createI18n({
+  legacy: false,
+  globalInjection: true,
   locale: defaultLocale,
   fallbackLocale: 'zh-CN',//默认中文
-  allowComposition: true,
   messages: {
     'en-US': en,
     'zh-CN': cn,

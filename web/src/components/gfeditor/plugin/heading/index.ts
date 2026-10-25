@@ -10,7 +10,7 @@ import {
 	UI,
 	NodeInterface,
 } from '@/components/gfeditor/emain';
-import type MarkdownIt from 'markdown-it';
+import type { MarkdownIt } from 'markdown-it';
 import Outline from './outline';
 import type { OutlineData } from './outline';
 import './index.css';

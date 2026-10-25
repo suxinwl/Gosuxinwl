@@ -16,7 +16,7 @@ import {
 	removeUnit,
 	CardType,
 } from '@/components/gfeditor/emain';
-import type MarkdownIt from 'markdown-it';
+import type { MarkdownIt } from 'markdown-it';
 import type { RequestData, RequestHeaders } from '@/components/gfeditor/emain';
 import { ImageOptions } from '.';
 import ImageComponent, { ImageValue } from './component';

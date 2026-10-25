@@ -4,13 +4,16 @@
 
 ## 环境与依赖
 
-使用 Node.js 24.14.x 和 npm 11.9.x，从当前 `web/` 目录执行：
+使用 Node.js 24.22.1 和 npm 11.21.1；Node 版本记录在 `.nvmrc`，npm 版本记录在 `package.json` 的 `packageManager`。从当前 `web/` 目录执行：
 
 ```shell
+npm install --global npm@11.21.1
 npm ci
 ```
 
 依赖版本以 `package.json` 和 `package-lock.json` 为准。后端安装与配置见 [项目说明](../README.MD)。
+
+升级批次、验证范围及后续主版本迁移见 [依赖升级记录](../docs/dependency-upgrade.md)。
 
 ## 开发服务
 

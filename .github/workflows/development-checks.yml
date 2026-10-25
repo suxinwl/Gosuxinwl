@@ -11,13 +11,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 24.14.0
+          node-version: 24.22.1
           cache: npm
           cache-dependency-path: web/package-lock.json
       - uses: actions/setup-go@v5
         with:
-          go-version: 1.25.1
+          go-version: 1.27.3
           cache: true
+      - name: Use pinned npm
+        run: npm install --global npm@11.21.1
       - name: Install frontend dependencies
         working-directory: web
         run: npm ci
@@ -54,7 +56,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: 1.25.1
+          go-version: 1.27.3
           cache: true
       - name: Install schema and exercise database operations
         env:
@@ -66,7 +68,9 @@ jobs:
         run: go test -v ./internal/logic/admin_install
       - uses: actions/setup-node@v4
         with:
-          node-version: 24.14.0
+          node-version: 24.22.1
+      - name: Use pinned npm
+        run: npm install --global npm@11.21.1
       - name: Build host for HTTP tests
         run: go build -mod=readonly -trimpath -o bin/gosuxin .
       - name: Install, login and exercise shared plugin database over HTTP

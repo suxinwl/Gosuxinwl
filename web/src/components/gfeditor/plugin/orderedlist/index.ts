@@ -5,7 +5,7 @@ import {
 	SchemaBlock,
 	PluginOptions,
 } from '@/components/gfeditor/emain';
-import type MarkdownIt from 'markdown-it';
+import type { MarkdownIt } from 'markdown-it';
 
 export interface OrderedListOptions extends PluginOptions {
 	hotkey?: string | Array<string>;

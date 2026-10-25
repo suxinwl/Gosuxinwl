@@ -7,7 +7,7 @@ import {
 	PluginEntry,
 	PluginOptions,
 } from '@/components/gfeditor/emain';
-import type MarkdownIt from 'markdown-it';
+import type { MarkdownIt } from 'markdown-it';
 
 export interface UnorderedlistOptions extends PluginOptions {
 	hotkey?: string | Array<string>;

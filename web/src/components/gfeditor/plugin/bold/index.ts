@@ -1,4 +1,4 @@
-import type MarkdownIt from 'markdown-it';
+import type { MarkdownIt } from 'markdown-it';
 import { MarkPlugin, PluginOptions, isEngine } from '@/components/gfeditor/emain';
 
 export interface BoldOptions extends PluginOptions {

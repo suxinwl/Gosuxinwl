@@ -11,16 +11,15 @@
     "esModuleInterop": true,
     "useDefineForClassFields": true,
     "allowSyntheticDefaultImports": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": [
-        "src/*"
+        "./src/*"
       ],
       "/@/*": [
-        "src/*"
+        "./src/*"
       ],
       "/#/*": [
-        "types/*"
+        "./types/*"
       ]
     },
     "lib": [

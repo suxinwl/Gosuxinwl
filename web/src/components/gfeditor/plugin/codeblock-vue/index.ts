@@ -14,7 +14,7 @@ import {
 	VIEW_CLASS_NAME,
 	SchemaBlock,
 } from '@/components/gfeditor/emain';
-import type MarkdownIt from 'markdown-it';
+import type { MarkdownIt } from 'markdown-it';
 import CodeBlockComponent, {
 	CodeBlockEditor,
 	CodeBlockValue,

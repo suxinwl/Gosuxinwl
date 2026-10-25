@@ -1,6 +1,4 @@
-import MarkdownIt from 'markdown-it';
-import Markdown from 'markdown-it';
-import Token from 'markdown-it/lib/token';
+import MarkdownIt, { type MarkdownIt as MarkdownParser, type Token } from 'markdown-it';
 import { EditorInterface, EngineInterface, ViewInterface } from '../types';
 import TinyCanvas from './tiny-canvas';
 export * from './string';
@@ -28,20 +26,22 @@ export const isView = (editor: EditorInterface): editor is ViewInterface => {
 
 export const createMarkdownIt = (
 	editor: EditorInterface,
-	presetName: Markdown.PresetName = 'default',
+	presetName: Extract<ConstructorParameters<typeof MarkdownIt>[0], string> = 'default',
 ) => {
-	const markdown = new Markdown(presetName, {
+	const markdown = new MarkdownIt(presetName, {
 		html: true,
 		typographer: true,
 		linkify: true,
 	});
+	// Preserve bare-domain links when pasting Markdown after the v15 upgrade.
+	markdown.linkify.set({ fuzzyLink: true });
 	editor.trigger('markdown-it', markdown);
 	return markdown;
 };
 
 export const convertMarkdown = (
 	editor: EditorInterface,
-	markdown: MarkdownIt,
+	markdown: MarkdownParser,
 	tokens: Token[],
 	checkInline: boolean = true,
 ) => {

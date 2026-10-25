@@ -1,4 +1,4 @@
-import type { Router, RouteRecordNormalized ,RouteRecordRaw} from 'vue-router';
+import type { Router, RouteRecordNormalized, RouteRecordRaw, RouteLocationRaw } from 'vue-router';
 import NProgress from 'nprogress'; // progress bar
 
 import usePermission from '@/hooks/permission';
@@ -7,7 +7,8 @@ import { WHITE_LIST, NOT_FOUND } from '../constants';
 import { isLogin } from '@/utils/auth';
 
 export default function setupPermissionGuard(router: Router) {
-  router.beforeEach(async (to, from, next) => {
+  router.beforeEach(async (to) => {
+    let target: RouteLocationRaw | undefined;
     const appStore = useAppStore();
     const userStore = useUserStore();
     const Permission = usePermission();
@@ -17,7 +18,6 @@ export default function setupPermissionGuard(router: Router) {
       // 针对来自服务端的菜单配置进行处理
       // Handle routing configuration from the server
       if (appStore.getIsDynamicAddedRoute) {//判断是否已经加载路由组件
-        next();
         NProgress.done();
         return;
       }
@@ -44,12 +44,11 @@ export default function setupPermissionGuard(router: Router) {
       }
       if (exist && permissionsAllow) {
         // 动态添加路由后，此处应当重定向到fullPath，否则会加载404页面内容
-        next({ path: to.fullPath, replace: true, query: to.query });
-      } else next(NOT_FOUND);
+        target = { path: to.fullPath, replace: true, query: to.query };
+      } else target = NOT_FOUND;
     } else {
       if(to.query.rouid){//独立界面无需登录查看
         if (appStore.getIsDynamicAddedRoute) {//判断是否已经加载路由组件
-          next();
           NProgress.done();
           return;
         }
@@ -74,15 +73,13 @@ export default function setupPermissionGuard(router: Router) {
           }
         }
         if (exist && permissionsAllow) {
-          next({ path: to.fullPath, replace: true, query: to.query });
-        } else next(NOT_FOUND);
+          target = { path: to.fullPath, replace: true, query: to.query };
+        } else target = NOT_FOUND;
       }else{
-        if (permissionsAllow) next();
-        else {
-          next(NOT_FOUND);
-        }
+        if (!permissionsAllow) target = NOT_FOUND;
       }
     }
     NProgress.done();
+    return target;
   });
 }

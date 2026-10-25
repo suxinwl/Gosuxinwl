@@ -1,6 +1,6 @@
-import { CallbackDataParams } from 'echarts/types/dist/shared.js';
+import type { DefaultLabelFormatterCallbackParams } from 'echarts';
 
-export interface ToolTipFormatterParams extends CallbackDataParams {
+export interface ToolTipFormatterParams extends DefaultLabelFormatterCallbackParams {
   axisDim: string;
   axisIndex: number;
   axisType: string;
