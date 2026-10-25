@@ -27,7 +27,7 @@ jobs:
         working-directory: web
         run: npm run check
       - name: Check core services and runtime plugin framework
-        run: go test ./internal/builtinai ./internal/devtools/ai ./internal/devtools/access ./internal/logic/admin_system ./internal/runtimeplugin ./utility/auth ./internal/logic/admin_install ./utility/tools/dbtool ./utility/dbcompat ./utility/extend/excelexport
+        run: go test ./internal/builtinai ./internal/devtools/ai ./internal/devtools/access ./internal/logic/admin_system ./internal/runtimeplugin ./internal/plugins ./internal/pluginworker ./utility/auth ./internal/logic/admin_install ./utility/tools/dbtool ./utility/dbcompat ./utility/extend/excelexport
       - name: Check SQLite seed is synchronized
         run: |
           python3 scripts/sync-sqlite-schema.py

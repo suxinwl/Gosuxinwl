@@ -451,7 +451,7 @@ func GetMenuArray(ctx context.Context, pdata gdb.Result, parent_id int64, roles 
 			}
 			//赋值
 			if request := g.RequestFromCtx(ctx); request != nil && request.GetQuery("runtimeFrontend").String() != "1" {
-				for prefix, plugin := range map[string]string{"album/": "ebook", "suxinvideo/": "suxinvideo", "privatecode/": "privatecode", "analysis/": "analysis"} {
+				for prefix, plugin := range map[string]string{"album/": "ebook", "privatecode/": "privatecode", "analysis/": "analysis"} {
 					if strings.HasPrefix(strings.TrimPrefix(component, "/"), prefix) && runtimeplugin.Default.Has(plugin) {
 						mid_item["component"] = "systool/plugin/runtime"
 						meta["runtimePlugin"] = plugin

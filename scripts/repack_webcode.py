@@ -13,9 +13,9 @@ skip = {".git", "node_modules", "dist", "__pycache__", ".cache"}
 def frontend_files(source=web):
     for directory, dirs, files in os.walk(source):
         dirs[:] = sorted(d for d in dirs if d not in skip)
-        # The old local installer can unpack a duplicate project below web/goframepro.
+        # Exclude nested frontend copies created by the installer.
         if Path(directory) == source:
-            dirs[:] = [d for d in dirs if d != "goframepro"]
+            dirs[:] = [d for d in dirs if d not in {"goframepro", "gosuxin-web"}]
         for name in sorted(files):
             if name.endswith((".local", ".log")) or ".timestamp-" in name:
                 continue

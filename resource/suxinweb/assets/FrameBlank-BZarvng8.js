@@ -1,1 +1,0 @@
-import{Kt as e,Zt as t,un as n}from"./arco-C7bjzLI6.js";import{t as r}from"./_plugin-vue_export-helper-BDNMzG2s.js";var i=t({name:`FrameBlank`});function a(t,r,i,a,o,s){return n(),e(`div`)}var o=r(i,[[`render`,a]]);export{o as default};

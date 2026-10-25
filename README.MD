@@ -13,6 +13,16 @@ GoSuxin 是由 Suxin 技术团队维护的 Go 开发框架与管理后台，包�
 
 当前工程提供主程序和通用插件 SDK；业务功能通过独立运行插件扩展。协议和开发入口见 [运行插件指南](docs/runtime-plugins.md)。
 
+仓库：[suxinwl/Gosuxinwl](https://github.com/suxinwl/Gosuxinwl)。默认安装仅包含通用管理后台，不预装业务插件，也不携带生产数据库、账号会话、私有配置或客户端安装包。需要什么业务功能，再从后台上传相应插件。
+
+## 初始化品牌与账号
+
+- 页面品牌为 **GoSuxin**，维护团队为 **Suxin技术团队**；登录页、后台标题、页脚及默认头像均使用 Suxin 品牌资源。
+- 管理员登录名和密码由安装者设置；初始姓名、昵称为 **Suxin管理员**，默认部门为 **Suxin技术团队**。
+- 管理员手机号、邮箱、电话均为空；邮件发送账号和授权码不预填，在个人中心及系统配置中按实际需要设置。
+- 首页提供“系统配置”“插件市场”“AI / MCP”快捷入口。业务菜单在插件安装并授权后出现。
+- MySQL 与 SQLite 使用相同的初始资料。安装器拒绝覆盖已有数据库；升级不会批量覆盖自定义头像、联系信息或角色授权。
+
 ## 环境要求
 
 | 环境 | 版本或用途 |
@@ -31,6 +41,8 @@ GoSuxin 是由 Suxin 技术团队维护的 Go 开发框架与管理后台，包�
 以下命令均从项目根目录执行。首次使用先初始化配置：
 
 ```shell
+git clone https://github.com/suxinwl/Gosuxinwl.git
+cd Gosuxinwl
 python scripts/init-local-config.py
 ```
 
@@ -46,7 +58,7 @@ go run .
 
 三种选项使用同一套程序，每个部署选择一种数据库。安装器会拒绝已有业务表的数据库，避免覆盖数据。已安装系统不能通过修改类型直接迁移数据。SQLite 适合单机部署，文件需放在本地持久磁盘；多个插件进程可以共享该数据库，但写入仍需串行，持续高并发写入应使用 MySQL。SQLite 不提供 MySQL 的字段注释，自动导出表头回退为字段名，业务页面可显式提供中文列标题。SQLite `NOCASE` 与 MySQL Unicode 排序规则不完全相同，业务唯一键应使用规范化编码。
 
-数据库初始化 SQL 分别为 `devsource/developer/install/goframepro.sql`（MySQL 8/5.7）与 `sqlite.sql`（SQLite）。升级 SQL 按数据库选择 `manifest/sql/v1.0.0.sql` 或 `v1.0.0.sqlite.sql`。修改 MySQL 种子后执行 `python scripts/sync-sqlite-schema.py`，审查并提交两套 SQL；该脚本只处理本仓库种子，不是通用数据库迁移器。SQL 导出文件也只供相同数据库类型使用。
+数据库初始化 SQL 分别为 `devsource/developer/install/gosuxin.sql`（MySQL 8/5.7）与 `sqlite.sql`（SQLite）。升级 SQL 按数据库选择 `manifest/sql/v1.0.0.sql` 或 `v1.0.0.sqlite.sql`。修改 MySQL 种子后执行 `python scripts/sync-sqlite-schema.py`，审查并提交两套 SQL；该脚本只处理本仓库种子，不是通用数据库迁移器。SQL 导出文件也只供相同数据库类型使用。
 
 运行插件宿主和共享 SDK 都已加载两种驱动；第三方插件自己的建表 SQL、查询和升级逻辑仍需支持所选数据库，已有插件应重新构建并验证。
 
@@ -95,7 +107,7 @@ python scripts/repack_webcode.py
 主程序和共享插件框架的检查命令与 CI 一致：
 
 ```shell
-go test ./internal/builtinai ./internal/devtools/ai ./internal/devtools/access ./internal/logic/admin_system ./internal/runtimeplugin ./utility/auth ./internal/logic/admin_install ./utility/tools/dbtool ./utility/dbcompat ./utility/extend/excelexport
+go test ./internal/builtinai ./internal/devtools/ai ./internal/devtools/access ./internal/logic/admin_system ./internal/runtimeplugin ./internal/plugins ./internal/pluginworker ./utility/auth ./internal/logic/admin_install ./utility/tools/dbtool ./utility/dbcompat ./utility/extend/excelexport
 ```
 
 构建 `bin/gosuxin`（Windows 为 `.exe`）后，可运行 `node scripts/test-database-install.cjs`，在 `runtime/db-compat/` 的独立目录验证 SQLite 安装、重启、登录、部门操作、角色授权与插件进程共享数据库。测试结束会关闭测试进程并保留诊断文件。CI 另以 MySQL 5.7、8.0 服务运行相同流程。手动验证 MySQL 时设置 `SUXIN_SMOKE_DATABASE=mysql57` 或 `mysql8`，以及 `SUXIN_TEST_MYSQL_HOST/PORT/USER/PASSWORD`，请使用专门的测试实例；脚本会创建独立的 `suxin_smoke_*` 数据库。
@@ -104,9 +116,19 @@ go test ./internal/builtinai ./internal/devtools/ai ./internal/devtools/access .
 
 AI/MCP 通过后台“开发者工具”进入，模型地址、模型名称、密钥和开发令牌在该页面配置。管理接口位于 `/admin/developer/ai/`，接口目录为 `GET /admin/developer/ai/interfaces`，MCP 入口为 `/mcp`。管理功能仅对启用的超级管理员开放，MCP 使用单独创建的 Bearer 开发令牌。
 
+安装业务功能的步骤：
+
+1. 打开首页“插件市场”，或“开发者工具 → 代码仓库”。
+2. 点击“安装插件包”，上传与服务器系统和架构匹配的运行插件 ZIP。
+3. 等待清单、文件校验和进程健康检查完成，再从新增菜单进入。
+4. 在角色管理中为需要使用该插件的普通管理员分配访问权限；安装本身不会给所有角色开放权限。
+5. 后续更新上传同名插件的新版本。卸载保留插件数据，再次安装可以恢复使用。
+
 运行插件通过“插件市场”上传与服务器操作系统和 CPU 架构匹配的 `suxin-runtime-v1` ZIP。后续安装和更新使用预编译程序，服务器无需 Go 或 npm；卸载关闭插件接口和进程，并保留插件数据与角色授权。依赖插件的 MCP 工具需要对应插件处于已安装状态。
 
 插件管理页面位于 `/plugins/<name>/admin/`，在宿主后台通过 `/suxinweb/runtime-plugins/<name>` 进入；普通角色需由管理员授予插件访问权限。
+
+近期通用修复包括外部设备时钟偏差引发的登录超时、登录后的完整路径回跳、插件管理请求来源校验，以及插件内部转发的 HTTPS 状态和客户端地址。宿主退出时会关闭所属插件进程；无需将业务源码合入主程序。
 
 ## 目录结构
 

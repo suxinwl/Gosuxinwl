@@ -74,7 +74,7 @@ const useUserStore = defineStore('user', {
     //登录成功后加载菜单
     async afterLoginAction(){
       if (!getToken()) return false;
-      this.info() 
+      await this.info()
       const appStore = useAppStore();
       await appStore.fetchServerMenuConfig({});
       //注册路由
@@ -112,11 +112,11 @@ const useUserStore = defineStore('user', {
       clearToken();
       removeRouteListener();
       const currentRoute = router.currentRoute.value;
-      router.push({
+      if (currentRoute.name === 'login') return;
+      router.replace({
         name:"login",
         query: {
-          ...router.currentRoute.value.query,
-          redirect: currentRoute.name as string,
+          redirect: currentRoute.fullPath,
         },
       });
     },

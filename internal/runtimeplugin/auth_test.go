@@ -36,7 +36,7 @@ func TestRuntimePluginUnauthenticatedNavigationAndAPI(t *testing.T) {
 	client := &http.Client{CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }}
 	base := "http://127.0.0.1:" + gconvString(s.GetListenedPort())
 
-	page, err := client.Get(base + "/plugins/suxinvideo/admin/")
+	page, err := client.Get(base + "/plugins/inventory/admin/")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,11 +44,11 @@ func TestRuntimePluginUnauthenticatedNavigationAndAPI(t *testing.T) {
 	if page.StatusCode != http.StatusFound {
 		t.Fatalf("page status = %d", page.StatusCode)
 	}
-	if got := page.Header.Get("Location"); got != "/suxinweb/login?redirect=%2Fplugins%2Fsuxinvideo%2Fadmin%2F" {
+	if got := page.Header.Get("Location"); got != "/suxinweb/login?redirect=%2Fplugins%2Finventory%2Fadmin%2F" {
 		t.Fatalf("page redirect = %q", got)
 	}
 
-	api, err := client.Get(base + "/plugins/suxinvideo/api/admin/dashboard")
+	api, err := client.Get(base + "/plugins/inventory/api/admin/dashboard")
 	if err != nil {
 		t.Fatal(err)
 	}

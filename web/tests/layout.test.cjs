@@ -196,7 +196,7 @@ test('content mode requires an actual embedded plugin admin path', () => {
 test('actual plugin iframe layouts render business content without duplicate host chrome', async () => {
   for (const [plugin, settings] of [
     ['privatecode', { layout: 'columns' }], ['ebook', { layout: 'left' }],
-    ['analysis', { layout: 'top', topMenu: true }], ['suxinvideo', { layout: 'columns', hideMenu: true }],
+    ['analysis', { layout: 'top', topMenu: true }], ['inventory', { layout: 'columns', hideMenu: true }],
   ]) {
     const { html, responsiveCalls } = await renderActualLayout(`/plugins/${plugin}/admin/page`, true, settings);
     assert.match(html, /layout-runtime-content/);
@@ -235,9 +235,9 @@ test('an iframe still uses its own login guard instead of a parent session', asy
       { path: '/privatecode', name: 'privatecode', component: {}, meta: { requiresAuth: true } },
     ] });
     setupGuard(router);
-    await router.push('/privatecode');
+    await router.push('/privatecode?filter=active#details');
     assert.equal(router.currentRoute.value.name, 'login');
-    assert.equal(router.currentRoute.value.query.redirect, 'privatecode');
+    assert.equal(router.currentRoute.value.query.redirect, '/privatecode?filter=active#details');
     assert.equal(infoCalls, 0);
     global.__runtimeLayoutFixture.loggedIn = true;
     await router.push('/privatecode');

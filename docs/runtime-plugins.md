@@ -21,6 +21,15 @@ powershell -ExecutionPolicy Bypass -File scripts/install-runtime-plugin.ps1 -Arc
 
 显式传入目标宿主地址，认证头使用当前有效会话生成的值。脚本先上传包，再提交安装；不保存凭据。
 
+离线安装需要先停止宿主，在项目根目录使用相同的校验流程：
+
+```shell
+go run ./scripts/runtime-plugin-install -inspect ./plugin-runtime.zip
+go run ./scripts/runtime-plugin-install ./plugin-runtime.zip
+```
+
+`-inspect` 只检查包，不安装。安装命令会检查安装锁和宿主监听端口，完成后重新启动宿主；正常在线更新优先使用后台上传。
+
 ## 访问与权限
 
 | 地址 | 用途 |
@@ -31,6 +40,10 @@ powershell -ExecutionPolicy Bypass -File scripts/install-runtime-plugin.ps1 -Arc
 | `/plugins/<name>/...` | 插件自定义业务路由 |
 
 宿主校验管理页面和管理 API 的登录与角色权限，并通过本机通道传递可信身份。插件管理页面使用短期 HttpOnly Cookie 续接宿主登录，宿主退出后原会话不再有效。自定义业务路由需要插件实现相应的鉴权。
+
+使用 Cookie 的写入请求应携带 `X-Requested-With: XMLHttpRequest`，并保持与宿主同源；服务端会验证 Origin、Referer。代理不会将浏览器的 Authorization 或 Cookie 原样交给插件，管理身份通过可信的内部通道传递。公共业务若需要独立登录，使用插件专属的鉴权协议。
+
+内部 HTTP 转发保留经宿主认证的 HTTPS 状态及客户端地址，插件可据此生成正确的链接、Cookie 和审计记录。插件不能自行信任来自公网的内部身份头。
 
 安装自动创建插件菜单和“访问管理端”权限节点，普通角色不会自动获得授权。管理员需在角色管理中授予插件访问权限；插件内部的细分业务权限由插件实现。
 

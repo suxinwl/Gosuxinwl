@@ -7,6 +7,7 @@ export default function setupUserLoginInfoGuard(router: Router) {
   router.beforeEach(async (to) => {
     NProgress.start();
     const userStore = useUserStore();
+    if (to.name === 'login') return;
     if (isLogin()) {
       if (userStore.id) {
         return;
@@ -19,8 +20,7 @@ export default function setupUserLoginInfoGuard(router: Router) {
           return {
             name: 'login',
             query: {
-              redirect: to.name,
-              ...to.query,
+              redirect: to.fullPath,
             } as LocationQueryRaw,
           };
         }
@@ -32,15 +32,10 @@ export default function setupUserLoginInfoGuard(router: Router) {
         return;
       }
       //判断是否需要-用外部独立页面，如数据大屏
-      let redirectval= to.name
-      if(redirectval=="notFound"&&to.path){
-        redirectval=to.path.split("/")[1]
-      }
       return {
         name: 'login',
         query: {
-          redirect: redirectval,
-          ...to.query,
+          redirect: to.fullPath,
         } as LocationQueryRaw,
       };
     }

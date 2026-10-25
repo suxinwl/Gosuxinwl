@@ -296,6 +296,7 @@ CREATE TABLE IF NOT EXISTS `gf_home_quickop` (
 -- ----------------------------
 INSERT INTO `gf_home_quickop` VALUES (1, 1, 1, 0, 0, '系统配置', 'configuration', 'svgfont-caozuo-banli', 1);
 INSERT INTO `gf_home_quickop` VALUES (2, 1, 1, 0, 0, '插件市场', 'codestore', 'icon-code-sandbox', 2);
+INSERT INTO `gf_home_quickop` VALUES (3, 1, 1, 0, 0, 'AI / MCP', 'developer_ai', 'icon-code', 3);
 
 -- ----------------------------
 -- Table structure for gf_login_log
@@ -394,14 +395,6 @@ WHERE path='/admin/datacenter/uploadconfig/saveConfig'
 AND NOT EXISTS (SELECT 1 FROM (SELECT path FROM gf_auth_rule) existing WHERE existing.path='/admin/datacenter/uploadconfig/testConnection')
 LIMIT 1;
 
--- GoSuxin default branding; existing custom contact values are retained.
-UPDATE gf_admin SET avatar='/resource/static/brand/logo.png?v=suxin1' WHERE username='admin' OR avatar IS NULL OR avatar='' OR avatar IN ('resource/uploads/static/avatar.png','/resource/uploads/static/avatar.png');
-UPDATE gf_admin SET email='56308750@qq.com' WHERE email='504500934@qq.com';
-UPDATE gf_admin SET mobile='' WHERE mobile='18988375982';
-UPDATE gf_admin SET tel='' WHERE tel='18988375982';
-UPDATE gf_email SET sender_email='56308750@qq.com' WHERE sender_email='504500934@qq.com';
-UPDATE gf_email SET mail_title=REPLACE(mail_title,'GoFly','Suxin') WHERE mail_title LIKE '%GoFly%';
-
 -- GoSuxin V1.0.0: additive and idempotent application metadata migration.
 CREATE TABLE IF NOT EXISTS `gf_app_meta` (
   `meta_key` varchar(64) NOT NULL DEFAULT '',
@@ -414,7 +407,7 @@ ON CONFLICT (`meta_key`) DO UPDATE SET `meta_value` = excluded.`meta_value`, `up
 
 -- Administrator cannot authenticate until the installer writes its chosen password.
 INSERT INTO gf_admin (id,account_id,dept_id,username,password,salt,name,nickname,avatar,email,mobile,tel,status,remark,loginip,login_attempts)
-VALUES (1,0,1,'admin','','','管理员','管理员','/resource/static/brand/logo.png?v=suxin1','56308750@qq.com','','',0,'','',0);
+VALUES (1,0,1,'admin','','','Suxin管理员','Suxin管理员','/resource/static/brand/logo.png?v=suxin1','','','',0,'','',0);
 INSERT INTO gf_auth_dept (id,account_id,pid,name,weigh,status,remark)
 VALUES (1,1,0,'Suxin技术团队',1,0,'');
 CREATE INDEX `gf_member_username` ON `gf_member` (`username` ASC);

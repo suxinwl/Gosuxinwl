@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/suxinwl/GoSuxin/framework/frame/g"
 	"github.com/suxinwl/GoSuxin/framework/net/ghttp"
 	hostauth "github.com/suxinwl/GoSuxin/utility/auth"
 	"github.com/suxinwl/GoSuxin/utility/gf"
@@ -122,6 +123,55 @@ func runtimePluginUnauthorized(r *ghttp.Request) {
 	r.ExitAll()
 }
 
+func runtimePluginSameOrigin(r *ghttp.Request, value string, originOnly bool) bool {
+	parsed, err := url.Parse(strings.TrimSpace(value))
+	if err != nil || parsed.Host == "" || parsed.User != nil || parsed.Opaque != "" || parsed.Fragment != "" {
+		return false
+	}
+	if originOnly && (parsed.Path != "" || parsed.RawQuery != "") {
+		return false
+	}
+	scheme := "http"
+	if runtimePluginSecureRequest(r) {
+		scheme = "https"
+	}
+	if parsed.Scheme != scheme {
+		return false
+	}
+	// Host belongs to the request's actual public origin. A client-supplied
+	// X-Forwarded-Host must never make a cross-origin request look same-origin.
+	requestOrigin, err := url.Parse(scheme + "://" + r.Host)
+	if err != nil || requestOrigin.Hostname() == "" || requestOrigin.User != nil {
+		return false
+	}
+	port := func(u *url.URL) string {
+		if value := u.Port(); value != "" {
+			return value
+		}
+		if u.Scheme == "https" {
+			return "443"
+		}
+		return "80"
+	}
+	return strings.EqualFold(parsed.Hostname(), requestOrigin.Hostname()) && port(parsed) == port(requestOrigin)
+}
+
+func runtimePluginCookieWriteAllowed(r *ghttp.Request) bool {
+	if r.Method == http.MethodGet || r.Method == http.MethodHead || r.Method == http.MethodOptions {
+		return true
+	}
+	if !strings.EqualFold(strings.TrimSpace(r.Header.Get("X-Requested-With")), "XMLHttpRequest") {
+		return false
+	}
+	if origin := r.Header.Get("Origin"); origin != "" && !runtimePluginSameOrigin(r, origin, true) {
+		return false
+	}
+	if referer := r.Header.Get("Referer"); referer != "" && !runtimePluginSameOrigin(r, referer, false) {
+		return false
+	}
+	return true
+}
+
 // runtimePluginAuth accepts the host token only long enough to exchange it for
 // a short-lived, HttpOnly cookie. Once present, the cookie is made authoritative
 // for the request and is still checked through the host token cache on every
@@ -151,6 +201,13 @@ func runtimePluginAuth(r *ghttp.Request) {
 		if cookieToken := runtimePluginCookieValue(r, plugin); cookieToken != "" {
 			r.Header.Set("Authorization", cookieToken)
 			if _, err := hostauth.ParseToken(r); err == nil {
+				if !runtimePluginCookieWriteAllowed(r) {
+					r.Header.Del("Authorization")
+					r.Response.WriteHeader(http.StatusForbidden)
+					r.Response.WriteJson(gf.Failed().SetCode(http.StatusForbidden).SetMsg("插件管理请求来源验证失败"))
+					r.ExitAll()
+					return
+				}
 				setRuntimePluginCookie(r, plugin, hostauth.GetRequestToken(r))
 				authenticated = true
 			} else {
@@ -159,6 +216,7 @@ func runtimePluginAuth(r *ghttp.Request) {
 		}
 	}
 	if !authenticated {
+		g.Log().Warningf(r.Context(), "plugin authentication rejected path=%s %s", r.URL.Path, hostauth.RequestTimingDiagnostic(r))
 		r.Header.Del("Authorization")
 	}
 

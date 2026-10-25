@@ -5,21 +5,21 @@ import (
 	"testing"
 )
 
-func TestProxySeparatesHostAndCMSCredentials(t *testing.T) {
-	for _, tc := range []struct {
-		name, path string
-		member     bool
-	}{{"suxinvideo", "/suxinvideo/app/v1/me", true}, {"suxinvideo", "/suxinvideo/center", true}, {"suxinvideo", "/admin/suxinvideo/dashboard", false}, {"suxinvideo", "/plugins/suxinvideo/admin/", false}, {"ebook", "/common/album/file", false}} {
-		request := httptest.NewRequest("GET", tc.path, nil)
-		request.Header.Set("Authorization", "Bearer member-token")
-		request.Header.Set("Cookie", "gfsessionid=member-session; suxin_plugin_suxinvideo_admin=host-token; biztoken=host-token")
-		stripHostCredentials(tc.name, tc.path, request)
-		if tc.member {
-			if request.Header.Get("Authorization") != "Bearer member-token" || request.Header.Get("Cookie") != "gfsessionid=member-session" {
-				t.Fatalf("member credentials lost: %s", tc.path)
+func TestProxyStripsHostCredentialsFromEveryPlugin(t *testing.T) {
+	for _, name := range []string{"inventory", "ebook", "example"} {
+		for _, suffix := range []string{"/admin/", "/api/admin/list", "/public/catalog"} {
+			path := "/plugins/" + name + suffix
+			request := httptest.NewRequest("GET", path, nil)
+			request.Header.Set("Authorization", "Bearer host-token")
+			request.Header.Set("Cookie", "gfsessionid=host-session; suxin_plugin_"+name+"_admin=host-token")
+			request.Header.Set("X-Request-ID", "request-123")
+			stripHostCredentials(name, path, request)
+			if request.Header.Get("Authorization") != "" || request.Header.Get("Cookie") != "" {
+				t.Fatalf("host credentials leaked: %s", path)
 			}
-		} else if request.Header.Get("Authorization") != "" || request.Header.Get("Cookie") != "" {
-			t.Fatalf("host credentials leaked: %s", tc.path)
+			if request.Header.Get("X-Request-ID") != "request-123" {
+				t.Fatal("unrelated request metadata lost")
+			}
 		}
 	}
 }

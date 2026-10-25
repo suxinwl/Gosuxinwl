@@ -22,8 +22,18 @@ temp/
 temp.yaml
 web/dist/
 web/goframepro/
+web/gosuxin-web/
 
 # Local configuration, credentials and persistent data
+/plugins/
+/android/
+/backups/
+/delivery/
+*.apk
+*.aab
+*.key
+*.pem
+account-sessions.*
 **/config/config.yaml
 manifest/config/app.yaml
 manifest/config/upload.yaml

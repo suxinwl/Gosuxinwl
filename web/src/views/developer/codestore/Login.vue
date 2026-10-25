@@ -115,7 +115,7 @@ components: {
 },
 emits: ['ok'],
 setup(_, { emit }) {
-    const loginConfig = useStorage('goflycode-login', {
+    const loginConfig = useStorage('suxin-code-login', {
         rememberMe: true,
         username: "", // 演示默认值
         password: "" // 演示默认值

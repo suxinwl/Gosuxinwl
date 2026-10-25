@@ -4,6 +4,7 @@ package pluginworker
 import (
 	"context"
 	"crypto/subtle"
+	"crypto/tls"
 	_ "github.com/suxinwl/GoSuxin/framework/contrib/drivers/mysql"
 	_ "github.com/suxinwl/GoSuxin/framework/contrib/drivers/sqlite"
 	_ "github.com/suxinwl/GoSuxin/framework/contrib/nosql/redis"
@@ -15,6 +16,8 @@ import (
 	"github.com/suxinwl/GoSuxin/internal/plugins"
 	"github.com/suxinwl/GoSuxin/utility/httpstream"
 	"io"
+	"net"
+	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
@@ -29,6 +32,7 @@ func Run(name string, bind func(context.Context, *ghttp.RouterGroup)) {
 	}
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
+	go func() { _, _ = io.Copy(io.Discard, os.Stdin); cancel() }()
 	s := g.Server()
 	config := ghttp.NewConfig()
 	config.Address = addr
@@ -37,7 +41,7 @@ func Run(name string, bind func(context.Context, *ghttp.RouterGroup)) {
 		panic(err)
 	}
 	s.BindHookHandler("/*path", ghttp.HookBeforeServe, func(r *ghttp.Request) {
-		if subtle.ConstantTimeCompare([]byte(r.Header.Get("X-Suxin-Plugin-Secret")), []byte(secret)) != 1 {
+		if !authenticateHostRequest(r.Request, secret) {
 			r.Response.WriteStatus(403)
 			r.ExitAll()
 			return
@@ -83,7 +87,39 @@ func Run(name string, bind func(context.Context, *ghttp.RouterGroup)) {
 			bind(ctx, group)
 		}
 	})
-	go func() { _, _ = io.Copy(io.Discard, os.Stdin); cancel() }()
-	go func() { <-ctx.Done(); _ = s.Shutdown() }()
-	s.Run()
+	if err := serveUntilCancelled(ctx, s.Start, s.Shutdown); err != nil {
+		panic(err)
+	}
+}
+
+func serveUntilCancelled(ctx context.Context, start, shutdown func() error) error {
+	if ctx.Err() != nil {
+		return nil
+	}
+	// Shutdown must follow Start even when the host exits during initialization.
+	// Shutting down an unstarted server leaves its later listener orphaned.
+	if err := start(); err != nil {
+		return err
+	}
+	<-ctx.Done()
+	return shutdown()
+}
+
+func authenticateHostRequest(r *http.Request, secret string) bool {
+	if len(secret) != 48 || subtle.ConstantTimeCompare([]byte(r.Header.Get("X-Suxin-Plugin-Secret")), []byte(secret)) != 1 {
+		return false
+	}
+	// This records the authenticated host's original transport; the internal
+	// hop is still loopback HTTP. Certificate details are not transferred.
+	if r.Header.Get("X-Suxin-Plugin-HTTPS") == "1" {
+		r.TLS = &tls.ConnectionState{}
+	}
+	// Preserve the connecting client's address for device controls, audit logs
+	// and rate limits; a loopback hop must not combine all visitors into one IP.
+	if remote := r.Header.Get("X-Suxin-Plugin-Remote-Addr"); remote != "" {
+		if ip, _, err := net.SplitHostPort(remote); err == nil && net.ParseIP(ip) != nil {
+			r.RemoteAddr = remote
+		}
+	}
+	return true
 }

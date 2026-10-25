@@ -257,7 +257,7 @@
 						<input type="text" name="vuepath" v-model="formApp.vueobjroot" placeholder="前端代码开发目录(绝对路径)，若不填默认安装后端根目录web下">
 					</div>
 					<div class="web-dir-tig" v-if="formApp.vueobjroot">
-						温馨提示：如果配置前端安装目录有其他文件，系统会自动创建名为goframepro目录用于存放前端代码，防止指定的目录有其他文件和解压文件混在一起不好区分。
+						温馨提示：如果配置前端安装目录有其他文件，系统会自动创建名为gosuxin-web目录用于存放前端代码，防止指定的目录有其他文件和解压文件混在一起不好区分。
 					</div>
 					<div class="form-buttons">
 						<button class="save-btn" :disabled="saveLoading" @click="handleSave">{{saveLoading?"安装中..":"立即安装"}}</button>

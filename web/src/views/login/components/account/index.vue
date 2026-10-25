@@ -48,6 +48,7 @@
 
 <script setup lang="ts">
 import { redirectRuntimePluginAfterLogin } from '@/utils/runtime-plugin';
+import { loginDestination } from '@/utils/login-redirect';
 import { ref,reactive,onBeforeUnmount,onMounted} from 'vue';
 import { type FormInstance, Message } from '@arco-design/web-vue'
 import { useRouter } from 'vue-router';
@@ -129,16 +130,7 @@ const handleLogin = async () => {
     })
     const { redirect, ...othersQuery } = router.currentRoute.value.query;
     if (await redirectRuntimePluginAfterLogin(redirect)) return;
-    var toURl=(redirect as string)
-    if(!toURl||toURl=="notFound"||toURl=="login"){
-        toURl="home"
-    }
-    router.replace({
-      name: toURl || 'home',
-      query: {
-        ...othersQuery,
-      },
-    });
+    await router.replace(loginDestination(redirect, othersQuery, name => router.hasRoute(name)));
     const { rememberMe } = loginConfig.value
     loginConfig.value.username = rememberMe ? form.username : ''
     loginConfig.value.password = rememberMe ? form.password : ''

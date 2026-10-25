@@ -83,8 +83,8 @@ func (s *sAdmininstall) Save(ctx context.Context, req *install.SaveReq) (res *gf
 	//2.修改app配置
 	if !g.IsEmpty(req.FormApp["vueobjroot"]) { //判断目录是否有其他文件
 		dir, _ := os.ReadDir(filepath.Join(req.FormApp["vueobjroot"]))
-		if len(dir) > 0 && !strings.Contains(req.FormApp["vueobjroot"], "goframepro") { //如果存在文件创建新目录
-			req.FormApp["vueobjroot"] = filepath.Join(req.FormApp["vueobjroot"]) + "/goframepro"
+		if len(dir) > 0 && !strings.Contains(req.FormApp["vueobjroot"], "gosuxin-web") { //如果存在文件创建新目录
+			req.FormApp["vueobjroot"] = filepath.Join(req.FormApp["vueobjroot"]) + "/gosuxin-web"
 		}
 	}
 	apperr := gf.UpConfigFild("/manifest/config/app.yaml", gf.Map{

@@ -50,7 +50,7 @@ func TestCallPluginRejectsInvalidUIDNamesAndDisabledPlugins(t *testing.T) {
 			t.Fatalf("invalid trusted UID accepted: %d %v", uid, err)
 		}
 	}
-	for _, name := range []string{"", "../outside", "arbitrary", "suxinvideo"} {
+	for _, name := range []string{"", "../outside", "arbitrary", "inventory"} {
 		if _, err := CallPlugin(context.Background(), 17, name, http.MethodGet, "/api/admin/codegen/history", nil); err == nil || !strings.Contains(err.Error(), "不支持") {
 			t.Fatalf("unapproved plugin name accepted: %s %v", name, err)
 		}

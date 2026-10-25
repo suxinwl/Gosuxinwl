@@ -17,6 +17,7 @@ import { AxiosRetry, shouldRetryRequest } from '@/utils/http/axiosRetry';
 import md5 from 'md5'
 import { Message,Modal,Notification} from '@arco-design/web-vue';
 import { Encrypt } from '@/utils/CryptoJS'
+import { serverClock } from './serverClock';
 const Root_url = import.meta.env.VITE_APP_ENV=="production"? window?.globalConfig.Root_url: window?.globalConfig.Root_url_dev;//前缀
 const Main_url = import.meta.env.VITE_APP_ENV=="production"? window?.globalConfig.Main_url: window?.globalConfig.Main_url_dev;//前缀
 type Recordable<T = any> = Record<string, T>;
@@ -68,6 +69,8 @@ const transform: AxiosTransform = {
     let timeoutMsg = '';
     switch (code) {
       case ResultEnum.TIMEOUT:
+        // Keep credentials and query parameters out of diagnostics.
+        console.warn('[admin-auth]', res.config.url?.split('?')[0], message || 'session rejected');
         options.errorMessageMode = 'message'//第一错误提示
         timeoutMsg = '登录超时,请重新登录!';
         const userStore = useUserStore();
@@ -149,7 +152,7 @@ const transform: AxiosTransform = {
    */
   requestInterceptors: (config, options) => {
     //时间戳
-    const timestamp: number = Date.parse(new Date().toString())/1000;
+    const timestamp = serverClock.timestamp();
     // 请求之前处理config
     const token = getToken();
     if (token && config.requestOptions?.withToken !== false) {
@@ -168,6 +171,8 @@ const transform: AxiosTransform = {
    * @description: 响应拦截器处理
    */
   responseInterceptors: (res: AxiosResponse<any>) => {
+    // Includes captcha/login responses, before authenticated follow-up calls.
+    serverClock.sync(res.headers?.date);
     return res;
   },
 

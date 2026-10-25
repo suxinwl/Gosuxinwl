@@ -124,7 +124,7 @@ func main(){
 }
 
 func TestNativeAliasesDoNotCaptureHostRoutes(t *testing.T) {
-	for name, path := range map[string]string{"ebook": "/admin/album/list", "privatecode": "/admin/privatecode/content/list", "analysis": "/admin/analysis/overview", "suxinvideo": "/suxinvideo/app/v1/bootstrap"} {
+	for name, path := range map[string]string{"ebook": "/admin/album/list", "privatecode": "/admin/privatecode/content/list", "analysis": "/admin/analysis/overview"} {
 		if !NativePath(name, path) {
 			t.Fatalf("missing alias %s", path)
 		}

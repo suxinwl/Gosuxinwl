@@ -230,6 +230,7 @@ func (m *Manager) launch(ctx context.Context, dir string) (*worker, error) {
 			director := proxy.Director
 			proxy.Director = func(r *http.Request) {
 				originalHost := r.Host
+				forwardHostHTTPS(r)
 				prefix := "/plugins/" + m.pluginName()
 				originalPath := r.URL.Path
 				if r.URL.Path == prefix || strings.HasPrefix(r.URL.Path, prefix+"/") {
@@ -261,6 +262,16 @@ func (m *Manager) launch(ctx context.Context, dir string) (*worker, error) {
 			w.proxy = proxy
 			return w, nil
 		}
+	}
+}
+
+// The loopback worker must see the original TLS state for absolute media URLs
+// and Secure cookies. Never forward a caller-supplied private transport flag.
+func forwardHostHTTPS(r *http.Request) {
+	r.Header.Set("X-Suxin-Plugin-Remote-Addr", r.RemoteAddr)
+	r.Header.Del("X-Suxin-Plugin-HTTPS")
+	if r.TLS != nil {
+		r.Header.Set("X-Suxin-Plugin-HTTPS", "1")
 	}
 }
 

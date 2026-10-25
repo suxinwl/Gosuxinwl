@@ -4,6 +4,7 @@ import (
 	"github.com/suxinwl/GoSuxin/utility/auth"
 	"github.com/suxinwl/GoSuxin/utility/gf"
 
+	"github.com/suxinwl/GoSuxin/framework/frame/g"
 	"github.com/suxinwl/GoSuxin/framework/net/ghttp"
 )
 
@@ -18,6 +19,7 @@ func Token(r *ghttp.Request) {
 	} else {
 		user, err := auth.ParseToken(r)
 		if err != nil {
+			g.Log().Warningf(r.Context(), "admin authentication rejected path=%s reason=%v %s", r.URL.Path, err, auth.RequestTimingDiagnostic(r))
 			r.Response.WriteJsonExit(gf.Failed().SetCode(auth.JwtTokenInvalid).SetMsg(err.Error()))
 			r.ExitAll()
 		} else {

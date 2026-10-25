@@ -56,6 +56,23 @@ func TestDatabaseInstallAndCRUD(t *testing.T) {
 			if username != "factory_admin" || hash != gf.Md5(gf.Md5("test-password")+salt) {
 				t.Fatal("installer did not set usable login credentials")
 			}
+			var name, nickname, avatar, email, mobile, tel, department string
+			if err = db.QueryRow("SELECT name,nickname,avatar,email,mobile,tel FROM gf_admin WHERE id=1").Scan(&name, &nickname, &avatar, &email, &mobile, &tel); err != nil {
+				t.Fatal(err)
+			}
+			if name != "Suxin管理员" || nickname != "Suxin管理员" || avatar != "/resource/static/brand/logo.png?v=suxin1" || email != "" || mobile != "" || tel != "" {
+				t.Fatal("fresh administrator must have Suxin branding and no prefilled contact data")
+			}
+			if err = db.QueryRow("SELECT name FROM gf_auth_dept WHERE id=1").Scan(&department); err != nil || department != "Suxin技术团队" {
+				t.Fatalf("default department: %v", err)
+			}
+			var quick, mailAccounts int
+			if err = db.QueryRow("SELECT COUNT(*) FROM gf_home_quickop WHERE path_url='developer_ai'").Scan(&quick); err != nil || quick != 1 {
+				t.Fatalf("AI / MCP shortcut: %d %v", quick, err)
+			}
+			if err = db.QueryRow("SELECT COUNT(*) FROM gf_email").Scan(&mailAccounts); err != nil || mailAccounts != 0 {
+				t.Fatal("fresh installation must not contain an email sending account")
+			}
 			if existing, err := openInstallDatabase(ctx, v); err == nil {
 				existing.Close()
 				t.Fatal("installer accepted an existing database")

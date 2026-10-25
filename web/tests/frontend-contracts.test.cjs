@@ -21,6 +21,26 @@ const Language = loadSource('src/components/gfeditor/emain/language.ts').default
 const { schemaStyles } = loadSource('src/components/gfeditor/emain/types/schema.ts');
 const { AxiosRetry, shouldRetryRequest } = loadSource('src/utils/http/axiosRetry.ts');
 const { getComputedStyle } = loadSource('src/components/gfeditor/emain/utils/string.ts');
+const { createServerClock } = loadSource('src/utils/http/serverClock.ts');
+test('login follow-up timestamps use server time despite remote clock skew or wall-clock changes', () => {
+  const serverTime = Date.parse('Sun, 25 Oct 2026 11:45:00 GMT');
+  for (const skew of [3000, -3000, 3600000, -3600000]) {
+    let wall = serverTime + skew;
+    let monotonic = 500;
+    const clock = createServerClock(() => wall, () => monotonic);
+    assert.equal(clock.timestamp(), Math.floor(wall / 1000));
+    clock.sync('Sun, 25 Oct 2026 11:45:00 GMT');
+    assert.equal(clock.timestamp(), serverTime / 1000);
+    wall += 86400000;
+    monotonic += 2500;
+    assert.equal(clock.timestamp(), serverTime / 1000 + 2);
+    clock.sync(undefined);
+    clock.sync('invalid date');
+    assert.equal(clock.timestamp(), serverTime / 1000 + 2);
+    clock.sync('Sun, 25 Oct 2026 11:45:04 GMT');
+    assert.equal(clock.timestamp(), serverTime / 1000 + 4);
+  }
+});
 
 test('editor language preserves nested toolbar labels and handles absent keys', () => {
   const language = new Language('zh-CN', { 'zh-CN': { table: { title: 'Table', verticalAlign: { top: 'Top' } } } });
@@ -112,26 +132,26 @@ test('runtime admin targets preserve existing business routes and accept generic
 });
 
 test('runtime iframe targets retain CMS tenant, business, view and edit query parameters', () => {
-  const query = { tenant_id: '42', business_id: 'video', view: 'list', edit: '1' };
+  const query = { tenant_id: '42', business_id: 'inventory', view: 'list', edit: '1' };
   assert.equal(
-    runtimePluginAdminTarget('/suxinvideo/admin', 'suxinvideo', query),
-    '/plugins/suxinvideo/admin/suxinvideo/admin?tenant_id=42&business_id=video&view=list&edit=1'
+    runtimePluginAdminTarget('/inventory/admin', 'inventory', query),
+    '/plugins/inventory/admin/inventory/admin?tenant_id=42&business_id=inventory&view=list&edit=1'
   );
   assert.equal(
     runtimePluginAdminTarget('/runtime-plugins/devtools/settings', 'devtools', query),
-    '/plugins/devtools/admin/settings?tenant_id=42&business_id=video&view=list&edit=1'
+    '/plugins/devtools/admin/settings?tenant_id=42&business_id=inventory&view=list&edit=1'
   );
 });
 
 test('runtime iframe query values round trip using Vue Router encoding for Chinese, symbols, null and arrays', () => {
   const query = {
-    '筛选&键': '影视 / 中文 + & = ? # % [片单]',
+    '筛选&键': '资料 / 中文 + & = ? # % [清单]',
     bare: null,
     empty: '',
     labels: ['中文', 'a+b & c=d?#/%', null, ''],
   };
   for (const [route, plugin, pathname] of [
-    ['/suxinvideo/admin', 'suxinvideo', '/plugins/suxinvideo/admin/suxinvideo/admin'],
+    ['/inventory/admin', 'inventory', '/plugins/inventory/admin/inventory/admin'],
     ['/runtime-plugins/devtools', undefined, '/plugins/devtools/admin/'],
   ]) {
     const target = runtimePluginAdminTarget(route, plugin, query);
@@ -508,5 +528,17 @@ test('return-based navigation guards retain permission rejection and failed-logi
   await router.push('/reports?tenant_id=42&view=table');
   assert.equal(logoutCalls, 1);
   assert.equal(router.currentRoute.value.name, 'login');
-  assert.deepEqual(router.currentRoute.value.query, { redirect: 'reports', tenant_id: '42', view: 'table' });
+  assert.deepEqual(router.currentRoute.value.query, { redirect: '/reports?tenant_id=42&view=table' });
+  await router.push('/runtime-plugins/inventory?view=content/collect');
+  assert.equal(router.currentRoute.value.query.redirect, '/runtime-plugins/inventory?view=content/collect');
+});
+
+test('login return targets retain plugin paths and reject external or missing route names', () => {
+  const { loginDestination } = loadSource('src/utils/login-redirect.ts');
+  const known = name => name === 'reports';
+  assert.equal(loginDestination('/runtime-plugins/inventory?view=content/collect#tasks', {}, known), '/runtime-plugins/inventory?view=content/collect#tasks');
+  assert.deepEqual(loginDestination('reports', { tenant_id: '42' }, known), { name: 'reports', query: { tenant_id: '42' } });
+  for (const target of ['runtime-plugins', 'login', '/login', '//external.example', '/\\external.example', 'https://external.example', undefined]) {
+    assert.deepEqual(loginDestination(target, {}, known), { name: 'home', query: {} });
+  }
 });

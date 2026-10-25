@@ -32,8 +32,9 @@ async function request(url, method = 'GET', body, authenticated = true) {
   const timestamp = Math.floor(Date.now() / 1000);
   const headers = { 'apiverify': Buffer.from(md5('suxin-public-example' + timestamp) + '#' + timestamp).toString('base64') };
   if (authenticated && token) headers.Authorization = encrypt(token + '#' + timestamp);
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
-  const response = await fetch(base + url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(120000) });
+  const multipart = body instanceof FormData;
+  if (body !== undefined && !multipart) headers['Content-Type'] = 'application/json';
+  const response = await fetch(base + url, { method, headers, body: body === undefined ? undefined : multipart ? body : JSON.stringify(body), signal: AbortSignal.timeout(120000) });
   const result = await response.json();
   assert.equal(result.code, 0, `${method} ${url}: ${result.message}`);
   return result.data;
@@ -104,18 +105,25 @@ async function main() {
     fs.writeFileSync(file, content);
   }
   copy('hack/config.example.yaml', 'hack/config.yaml');
-  for (const name of ['sqlite.sql', 'goframepro.sql', 'webcode.zip', 'index.html', 'vue.js', 'axios.min.js']) copy(`devsource/developer/install/${name}`);
+  for (const name of ['sqlite.sql', 'gosuxin.sql', 'webcode.zip', 'index.html', 'vue.js', 'axios.min.js']) copy(`devsource/developer/install/${name}`);
   fs.mkdirSync(path.join(dir, 'resource/uploads'), { recursive: true });
   fs.mkdirSync(path.join(dir, 'resource/static/brand'), { recursive: true });
+  fs.mkdirSync(path.join(dir, 'web'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'web/keep.txt'), 'existing frontend');
   await start();
   const installer = await (await fetch(base + '/install/')).text();
   for (const value of ['mysql8', 'mysql57', 'sqlite']) assert.ok(installer.includes(`value="${value}"`));
-  await request('/admin/install/save', 'POST', { formDB: databaseKind === 'sqlite' ? { type: 'sqlite', path: 'storage/database/system.db', prefix: 'gf_' } : { type: databaseKind, host: process.env.SUXIN_TEST_MYSQL_HOST, port: process.env.SUXIN_TEST_MYSQL_PORT, user: process.env.SUXIN_TEST_MYSQL_USER, pass: process.env.SUXIN_TEST_MYSQL_PASSWORD || '', name: 'suxin_smoke_' + Date.now(), prefix: 'gf_' }, formApp: { username: 'factory_admin', password: 'smoke-test-password', vueobjroot: '' } }, false);
+  await request('/admin/install/save', 'POST', { formDB: databaseKind === 'sqlite' ? { type: 'sqlite', path: 'storage/database/system.db', prefix: 'gf_' } : { type: databaseKind, host: process.env.SUXIN_TEST_MYSQL_HOST, port: process.env.SUXIN_TEST_MYSQL_PORT, user: process.env.SUXIN_TEST_MYSQL_USER, pass: process.env.SUXIN_TEST_MYSQL_PASSWORD || '', name: 'suxin_smoke_' + Date.now(), prefix: 'gf_' }, formApp: { username: 'factory_admin', password: 'smoke-test-password', vueobjroot: 'web' } }, false);
   assert.ok(fs.existsSync(path.join(dir, 'devsource/developer/install/install.lock')));
+  assert.equal(fs.readFileSync(path.join(dir, 'web/keep.txt'), 'utf8'), 'existing frontend');
+  assert.ok(fs.existsSync(path.join(dir, 'web/gosuxin-web/package.json')));
   console.log('PASS ' + databaseKind + ' HTTP installation and selector');
   await stop(); await start();
   token = decrypt(await request('/admin/user/login', 'POST', { username: 'factory_admin', password: md5('smoke-test-password') }, false));
-  await request('/admin/user/getUserinfo');
+  const identity = await request('/admin/user/getUserinfo');
+  assert.equal(identity.name, 'Suxin管理员');
+  assert.equal(identity.mobile || '', '');
+  assert.equal(identity.email || '', '');
   const menu = await request('/admin/user/getMenu');
   assert.ok(menu);
   console.log('PASS restart, login, identity and dynamic menus');
@@ -156,8 +164,49 @@ async function main() {
   const workerPort = workerListener.address().port;
   await new Promise(resolve => workerListener.close(resolve));
   await testWorker(workerPort);
+  await testPluginUpload();
   await request('/admin/user/logout', 'POST', {});
   console.log('PASS logout');
   console.log('Isolated test files: ' + dir);
+}
+async function testPluginUpload() {
+  const catalogPath = '/admin/developer/packinstall/getInstallPack?catalog=true';
+  assert.deepEqual(await request(catalogPath), [], 'fresh host must not ship preinstalled business plugins');
+  const filename = process.platform === 'win32' ? 'db-probe.exe' : 'db-probe';
+  const html = '<h1>Suxin plugin fixture</h1>';
+  const binary = path.join(dir, filename);
+  const archive = path.join(dir, 'db-probe.zip');
+  const manifest = { format: 'suxin-runtime-v1', name: 'db-probe', title: 'Suxin 示例插件', version: '1.0.0', protocol: 1,
+    os: process.platform === 'win32' ? 'windows' : process.platform,
+    arch: process.arch === 'x64' ? 'amd64' : process.arch,
+    files: {
+      ['bin/' + filename]: crypto.createHash('sha256').update(fs.readFileSync(binary)).digest('hex'),
+      'admin/index.html': crypto.createHash('sha256').update(html).digest('hex'),
+    },
+  };
+  execFileSync(process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3'), ['-c',
+    'import sys,zipfile\nwith zipfile.ZipFile(sys.argv[1], "w", zipfile.ZIP_DEFLATED) as z:\n z.write(sys.argv[2], sys.argv[3])\n z.writestr("plugin.json", sys.argv[4])\n z.writestr("admin/index.html", sys.argv[5])',
+    archive, binary, 'bin/' + filename, JSON.stringify(manifest), html], { windowsHide: true, stdio: 'pipe' });
+  const form = new FormData();
+  form.set('file', new Blob([fs.readFileSync(archive)], { type: 'application/zip' }), 'db-probe.zip');
+  const upload = await request('/admin/developer/packinstall/installLocalCode', 'POST', form);
+  await request('/admin/developer/packinstall/installCode', 'POST', { name: upload });
+  try {
+    assert.ok((await request(catalogPath)).some(row => row.name === 'db-probe' && row.installed));
+    assert.ok(JSON.stringify(await request('/admin/user/getMenu')).includes('runtime_plugin_db-probe'));
+    await request('/plugins/db-probe/api/admin/probe', 'POST', {});
+    const retained = path.join(dir, 'storage/plugins/db-probe/data/retained.txt');
+    fs.mkdirSync(path.dirname(retained), { recursive: true });
+    fs.writeFileSync(retained, 'plugin data');
+    await request('/admin/developer/packinstall/uninstallCode', 'POST', { name: 'db-probe' });
+    assert.equal(fs.readFileSync(retained, 'utf8'), 'plugin data');
+    assert.ok((await request(catalogPath)).some(row => row.name === 'db-probe' && !row.installed));
+    assert.ok(!JSON.stringify(await request('/admin/user/getMenu')).includes('runtime_plugin_db-probe'));
+    await request('/admin/developer/packinstall/installCode', 'POST', { name: 'db-probe' });
+    await request('/plugins/db-probe/api/admin/probe', 'POST', {});
+    console.log('PASS empty plugin catalog, ZIP upload/install, menu, authenticated API, uninstall and reinstall with retained data');
+  } finally {
+    await request('/admin/developer/packinstall/uninstallCode', 'POST', { name: 'db-probe' });
+  }
 }
 main().catch(error => { console.error(error.message); process.exitCode = 1; }).finally(stop);

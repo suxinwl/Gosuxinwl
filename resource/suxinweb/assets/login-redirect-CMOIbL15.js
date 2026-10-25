@@ -1,0 +1,1 @@
+function e(e,t,n){if(typeof e==`string`){if(/^\/(?!\/)/.test(e)&&!/[\\\u0000-\u0020]/.test(e)&&!/^\/login(?:[/?#]|$)/.test(e))return e;if(e!==`login`&&e!==`notFound`&&n(e))return{name:e,query:t}}return{name:`home`,query:t}}export{e as t};

@@ -1,1 +1,0 @@
-import{Kt as e,Zt as t,un as n}from"./arco-C7bjzLI6.js";import{_ as r,v as i}from"./vue-ypm9Xg9w.js";var a=t({__name:`index`,setup(t){let a=i(),o=r().params.path;return a.replace({path:o}),(t,r)=>(n(),e(`div`))}});export{a as default};

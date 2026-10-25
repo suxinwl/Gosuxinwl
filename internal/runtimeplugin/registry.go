@@ -134,7 +134,7 @@ func (r *Registry) Start(ctx context.Context, s *ghttp.Server, auth ...ghttp.Han
 	}
 	s.Group("/plugins/:plugin", func(group *ghttp.RouterGroup) {
 		// The admin shell is protected as well as its API. Otherwise a user could
-		// load the CMS HTML before the API correctly rejected the request.
+		// load the plugin HTML before the API correctly rejected the request.
 		group.Group("/admin", func(admin *ghttp.RouterGroup) {
 			admin.Middleware(runtimeAdminPageRedirect)
 			admin.Middleware(auth...)
@@ -192,8 +192,6 @@ func NativePath(name, path string) bool {
 	switch name {
 	case "ebook":
 		prefixes = []string{"/admin/album", "/common/album", "/albums", "/albums-en"}
-	case "suxinvideo":
-		prefixes = []string{"/admin/suxinvideo", "/suxinvideo"}
 	case "privatecode":
 		prefixes = []string{"/admin/privatecode"}
 	case "analysis":

@@ -115,11 +115,11 @@ func TestCorruptStateDoesNotSilentlyRestorePlugins(t *testing.T) {
 }
 
 func TestMenuFilterKeepsOriginalPermissionsForReinstall(t *testing.T) {
-	isolate(t, Plugin{Name: "ebook", MenuRoots: []string{"albumCenter"}}, Plugin{Name: "suxinvideo", MenuRoots: []string{"suxinvideo_admin"}})
+	isolate(t, Plugin{Name: "ebook", MenuRoots: []string{"albumCenter"}}, Plugin{Name: "inventory", MenuRoots: []string{"inventory_admin"}})
 	makeRow := func(id, pid int, name string) gdb.Record {
 		return gdb.Record{"id": gvar.New(id), "pid": gvar.New(pid), "routename": gvar.New(name), "status": gvar.New(0)}
 	}
-	rows := gdb.Result{makeRow(13, 0, "codestore"), makeRow(200, 100, "albumManage"), makeRow(100, 0, "albumCenter"), makeRow(300, 200, "album:save"), makeRow(400, 0, "suxinvideo_admin")}
+	rows := gdb.Result{makeRow(13, 0, "codestore"), makeRow(200, 100, "albumManage"), makeRow(100, 0, "albumCenter"), makeRow(300, 200, "album:save"), makeRow(400, 0, "inventory_admin")}
 	if got := FilterMenus(rows); len(got) != 1 || got[0]["id"].Int() != 13 {
 		t.Fatalf("disabled menus leaked: %v", got)
 	}
@@ -130,7 +130,7 @@ func TestMenuFilterKeepsOriginalPermissionsForReinstall(t *testing.T) {
 	if got := FilterMenus(rows); len(got) != 4 {
 		t.Fatalf("reinstall did not restore preserved menu tree: %v", got)
 	}
-	if EntryEnabled("suxinvideo_admin") || !EntryEnabled("codestore") {
+	if EntryEnabled("inventory_admin") || !EntryEnabled("codestore") {
 		t.Fatal("shortcut status incorrect")
 	}
 }

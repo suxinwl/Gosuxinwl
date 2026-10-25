@@ -141,7 +141,7 @@ func openInstallDatabase(ctx context.Context, v map[string]string) (*sql.DB, err
 }
 
 func seedDatabase(ctx context.Context, db *sql.DB, kind, directory, username, password string) error {
-	name := "goframepro.sql"
+	name := "gosuxin.sql"
 	if kind == "sqlite" {
 		name = "sqlite.sql"
 	}

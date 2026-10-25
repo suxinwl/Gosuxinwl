@@ -1,6 +1,6 @@
 """Generate SQLite seeds from this repository's MySQL seed (not arbitrary SQL).
 
-Run after editing goframepro.sql; review and commit both dialects together.
+Run after editing gosuxin.sql; review and commit both dialects together.
 SQLite explicit empty defaults preserve the seed's MySQL non-strict insert behavior.
 """
 from pathlib import Path
@@ -57,12 +57,12 @@ def convert(source: str) -> str:
 
 if __name__ == "__main__":
     for source, target in [
-        ("devsource/developer/install/goframepro.sql", "devsource/developer/install/sqlite.sql"),
+        ("devsource/developer/install/gosuxin.sql", "devsource/developer/install/sqlite.sql"),
         ("manifest/sql/v1.0.0.sql", "manifest/sql/v1.0.0.sqlite.sql"),
     ]:
         result = convert((ROOT / source).read_text(encoding="utf-8"))
         # Reject invalid generated SQL before replacing the checked-in seed.
         with sqlite3.connect(":memory:") as db:
             db.executescript(result)
-        (ROOT / target).write_text(result, encoding="utf-8")
+        (ROOT / target).write_text(result, encoding="utf-8", newline="\n")
         print(target)

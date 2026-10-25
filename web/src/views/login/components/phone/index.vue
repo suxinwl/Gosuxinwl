@@ -32,6 +32,7 @@
 
 <script setup lang="ts">
 import { redirectRuntimePluginAfterLogin } from '@/utils/runtime-plugin';
+import { loginDestination } from '@/utils/login-redirect';
 import { ref,reactive,watch,onMounted} from 'vue';
 import { type FormInstance, Message } from '@arco-design/web-vue'
 import { useUserStore } from '@/store'
@@ -63,16 +64,7 @@ const handleLogin = async () => {
     })
     const { redirect, ...othersQuery } = router.currentRoute.value.query;
     if (await redirectRuntimePluginAfterLogin(redirect)) return;
-    var toURl=(redirect as string)
-    if(toURl=="notFound"){
-        toURl="home"
-    }
-    router.replace({
-      name: toURl || 'home',
-      query: {
-        ...othersQuery,
-      },
-    });
+    await router.replace(loginDestination(redirect, othersQuery, name => router.hasRoute(name)));
     Message.success({content:t('login.form.login.success'),id:"errmsg"})
   } catch (error) {
     form.captcha = ''
